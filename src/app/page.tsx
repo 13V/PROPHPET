@@ -159,7 +159,7 @@ export default function Home() {
             </p>
           </div>
           <div className="flex items-center justify-center gap-6 text-sm text-gray-500">
-            <a href="#" className="hover:text-purple-400 transition-colors">Twitter</a>
+            <a href="https://x.com/omensolfun" target="_blank" rel="noopener noreferrer" className="hover:text-purple-400 transition-colors">Twitter</a>
             <a href="#" className="hover:text-purple-400 transition-colors">Telegram</a>
             <a href="#" className="hover:text-purple-400 transition-colors">Discord</a>
             <a href="#" className="hover:text-purple-400 transition-colors">Whitepaper</a>
