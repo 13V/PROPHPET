@@ -2,6 +2,7 @@
 import { WalletConnect } from "@/components/WalletConnect";
 import { PredictionCard } from "@/components/PredictionCard";
 import { Tokenomics } from "@/components/Tokenomics";
+import { useState } from 'react';
 import { Roadmap } from "@/components/Roadmap";
 import { HowItWorks } from "@/components/HowItWorks";
 import { Stats } from "@/components/Stats";
@@ -9,13 +10,22 @@ import { FAQ } from "@/components/FAQ";
 import { HowToBuy } from "@/components/HowToBuy";
 import { TrustBadges } from "@/components/TrustBadges";
 import { motion } from "framer-motion";
-import { Sparkles, ArrowRight, Twitter, Send } from "lucide-react";
+import { Sparkles, ArrowRight, Twitter, Send, Copy, Check } from "lucide-react";
 
 import { dailyPredictions } from "@/data/predictions";
 
 const predictions = dailyPredictions;
 
+const CONTRACT_ADDRESS = '7XuMtMfPXxHbjDLYtxmK4wRvYiFu1N9F8VDXukMTpump';
+
 export default function Home() {
+  const [copied, setCopied] = useState(false);
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(CONTRACT_ADDRESS);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
   return (
     <main className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900 via-gray-950 to-gray-950">
       {/* Header */}
@@ -43,8 +53,8 @@ export default function Home() {
           animate={{ opacity: 1, y: 0 }}
           className="max-w-4xl"
         >
-          <div className="mb-6 inline-block rounded-full bg-purple-500/10 px-4 py-2 border border-purple-500/20">
-            <span className="text-purple-400 font-semibold">🔥 Fair Launch on Pump.fun Soon</span>
+          <div className="mb-6 inline-block rounded-full bg-green-500/10 px-4 py-2 border border-green-500/20">
+            <span className="text-green-400 font-semibold">🚀 NOW LIVE on Pump.fun</span>
           </div>
           <h2 className="mb-6 text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-500 to-purple-600 md:text-7xl">
             PREDICT THE FUTURE.<br />EARN REWARDS.
@@ -53,12 +63,38 @@ export default function Home() {
             The only memecoin with real utility. Vote on crypto predictions, prove you&apos;re an oracle, and earn rewards for being right. 🔮
           </p>
 
+          {/* Contract Address */}
+          <div className="mb-6 max-w-2xl mx-auto">
+            <p className="text-sm text-gray-400 mb-2">Contract Address</p>
+            <div className="flex items-center gap-2 bg-gray-900/50 border border-purple-500/30 rounded-lg p-4">
+              <code className="flex-1 text-purple-300 text-sm font-mono break-all">
+                {CONTRACT_ADDRESS}
+              </code>
+              <button
+                onClick={copyToClipboard}
+                className="p-2 bg-purple-500/20 hover:bg-purple-500/30 rounded-lg transition-all border border-purple-500/30"
+                title="Copy to clipboard"
+              >
+                {copied ? (
+                  <Check className="w-5 h-5 text-green-400" />
+                ) : (
+                  <Copy className="w-5 h-5 text-purple-400" />
+                )}
+              </button>
+            </div>
+          </div>
+
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-            <button className="group px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg font-bold text-white hover:scale-105 transition-all flex items-center justify-center gap-2">
+            <a
+              href={`https://pump.fun/${CONTRACT_ADDRESS}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg font-bold text-white hover:scale-105 transition-all flex items-center justify-center gap-2"
+            >
               Buy $OMEN
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </button>
+            </a>
             <button className="px-8 py-4 bg-gray-800 hover:bg-gray-700 rounded-lg font-bold text-white transition-all border border-gray-700">
               Read Whitepaper
             </button>
