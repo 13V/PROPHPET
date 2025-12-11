@@ -71,9 +71,21 @@ export async function fetchPolymarketTrending(limit = 50, offset = 0) {
                 const market = event.markets[0]; // Take the first/primary market
                 if (!market) return null;
 
-                // Parse prices (default to 50/50 if missing)
-                const yesPrice = market.outcomePrices ? parseFloat(market.outcomePrices[0]) : 0.5;
-                const noPrice = market.outcomePrices ? parseFloat(market.outcomePrices[1]) : 0.5;
+                // Parse prices (Robust handling for API variations)
+                let prices = market.outcomePrices;
+
+                // If it's a string (JSON stringified), parse it first
+                if (typeof prices === 'string') {
+                    try {
+                        prices = JSON.parse(prices);
+                    } catch (e) {
+                        console.warn('Failed to parse outcomePrices', prices);
+                        prices = ["0.5", "0.5"];
+                    }
+                }
+
+                const yesPrice = (prices && prices[0]) ? parseFloat(prices[0]) : 0.5;
+                const noPrice = (prices && prices[1]) ? parseFloat(prices[1]) : 0.5;
 
                 // Calculate votes from volume (rough approximation: $1 = 1 vote)
                 const totalVolume = parseFloat(market.volume || event.volume || '0');
