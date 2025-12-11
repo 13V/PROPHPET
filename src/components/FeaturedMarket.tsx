@@ -45,7 +45,7 @@ export const FeaturedMarket = ({ data, onOpenCreateModal }: FeaturedMarketProps)
 
             <div className="relative grid lg:grid-cols-5 gap-0 min-h-[480px]">
                 {/* Left: Chart & Info (3 cols) */}
-                <div className="lg:col-span-3 p-10 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-white/5 relative">
+                <div className="lg:col-span-3 p-6 md:p-10 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-white/5 relative">
 
                     {/* Floating Badge */}
                     <div className="absolute top-10 right-10 flex items-center gap-3">
@@ -65,7 +65,7 @@ export const FeaturedMarket = ({ data, onOpenCreateModal }: FeaturedMarketProps)
                             </span>
                         </div>
 
-                        <h2 className="text-4xl md:text-5xl font-black text-white mb-6 leading-[1.1] tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">
+                        <h2 className="text-2xl md:text-4xl lg:text-5xl font-black text-white mb-6 leading-[1.1] tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">
                             {data?.question || "Will Bitcoin close higher today?"}
                         </h2>
 
@@ -102,7 +102,7 @@ export const FeaturedMarket = ({ data, onOpenCreateModal }: FeaturedMarketProps)
                         </div>
 
                         {/* Seamless Chart Container */}
-                        <div className="h-[120px] w-full relative overflow-hidden mask-linear-fade">
+                        <div className="h-[80px] md:h-[120px] w-full relative overflow-hidden mask-linear-fade">
                             <Sparkline data={bigChartData} width={800} height={120} color="#a855f7" />
                             {/* Gradient Overlay for Fade */}
                             <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-transparent to-transparent opacity-80" />
@@ -111,7 +111,7 @@ export const FeaturedMarket = ({ data, onOpenCreateModal }: FeaturedMarketProps)
                 </div>
 
                 {/* Right: Trading Interface (2 cols) */}
-                <div className="lg:col-span-2 p-10 bg-white/[0.02] backdrop-blur-md flex flex-col justify-center gap-8 relative overflow-hidden">
+                <div className="lg:col-span-2 p-6 md:p-10 bg-white/[0.02] backdrop-blur-md flex flex-col justify-center gap-8 relative overflow-hidden">
                     {/* Glass Reflection */}
                     <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 

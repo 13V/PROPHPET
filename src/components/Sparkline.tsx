@@ -31,7 +31,7 @@ export const Sparkline: React.FC<SparklineProps> = ({
     }).join(' ');
 
     return (
-        <svg width={width} height={height} className="overflow-visible">
+        <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full overflow-visible" preserveAspectRatio="none">
             <motion.path
                 d={`M ${points}`}
                 fill="none"
@@ -43,7 +43,6 @@ export const Sparkline: React.FC<SparklineProps> = ({
                 animate={{ pathLength: 1, opacity: 1 }}
                 transition={{ duration: 1.5, ease: "easeInOut" }}
             />
-            {/* Add a subtle gradient fill area if we wanted, but stick to line for now */}
         </svg>
     );
 };
