@@ -35,68 +35,27 @@ export default function Home() {
   useEffect(() => {
     async function loadBackgroundData() {
       try {
-        console.log("Fetching live data...");
+        console.log("Fetching live data (Strict: < 24h)...");
         setIsLoading(true);
 
-        // Fetch a large batch to work with
-        const allEvents = await fetchPolymarketTrending(100);
+        // NEW: specific fetcher for "50 daily markets"
+        const { fetchDailyMarkets } = await import('@/services/polymarket');
+        const dailyMarkets = await fetchDailyMarkets(50);
 
-        if (allEvents.length === 0) {
+        if (dailyMarkets.length === 0) {
           console.warn("API returned 0 events.");
           setFetchError(true);
           setIsLoading(false);
           return;
         }
 
-        let finalDisplayList: any[] = [];
-
-        // 1. Priority: Daily Markets (< 24h or keywords)
-        const dailyMarkets = allEvents.filter((e: any) => {
-          const title = (e.question || '').toLowerCase(); // FIX: Use 'question', not 'title'
-          const isDailyKeyword = title.includes('daily') || title.includes('today') || title.includes('tomorrow') || title.includes('tonight');
-
-          let isEndingSoon = false;
-          if (e.endDate) {
-            const end = new Date(e.endDate).getTime();
-            const now = Date.now();
-            const hoursLeft = (end - now) / (1000 * 60 * 60);
-            isEndingSoon = hoursLeft > 0 && hoursLeft < 24;
-          }
-          return isDailyKeyword || isEndingSoon;
-        });
-
-        finalDisplayList = [...dailyMarkets];
-
-        // 2. Fallback: If < 25, add Short-Term Markets (< 72h)
-        if (finalDisplayList.length < 25) {
-          const shortTermMarkets = allEvents.filter((e: any) => {
-            // Avoid duplicates
-            if (finalDisplayList.find(existing => existing.id === e.id)) return false;
-
-            if (e.endDate) {
-              const end = new Date(e.endDate).getTime();
-              const hoursLeft = (end - Date.now()) / (1000 * 60 * 60);
-              return hoursLeft > 0 && hoursLeft < 72; // 3 days
-            }
-            return false;
-          });
-          finalDisplayList = [...finalDisplayList, ...shortTermMarkets];
-        }
-
-        // 3. Fallback: If still < 25, fill with Top Trending
-        if (finalDisplayList.length < 25) {
-          const needed = 25 - finalDisplayList.length;
-          const fillers = allEvents.filter((e: any) => !finalDisplayList.find(existing => existing.id === e.id));
-          const topFillers = fillers.slice(0, needed + 5);
-          finalDisplayList = [...finalDisplayList, ...topFillers];
-        }
-
         // 4. Merge with User Markets (Keep these, they are real user input)
         const userMarkets = getUserMarkets();
 
         // Assemble Final List: User -> Live
-        const mergedList = [...userMarkets, ...finalDisplayList];
+        const mergedList = [...userMarkets, ...dailyMarkets];
 
+        console.log(`Displaying ${mergedList.length} markets total.`);
         setPredictions(mergedList);
         setFetchError(false);
 

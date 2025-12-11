@@ -207,3 +207,49 @@ export async function fetchMarketResult(id: number): Promise<'yes' | 'no' | null
         return null;
     }
 }
+
+/**
+ * Smart Fetcher: Specifically hunts for 50 markets ending < 24h
+ * Loops through pages until it satisfies the requirement.
+ */
+export async function fetchDailyMarkets(requiredCount = 50): Promise<any[]> {
+    let collected: any[] = [];
+    let offset = 0;
+    const batchSize = 100; // API Limit usually
+    const maxPages = 10; // Don't loop forever
+
+    console.log(`Starting prioritized search for ${requiredCount} daily markets...`);
+
+    for (let i = 0; i < maxPages; i++) {
+        // Fetch batch
+        const batch = await fetchPolymarketTrending(batchSize, offset);
+
+        if (batch.length === 0) break; // End of data
+
+        // Filter this batch for < 24h
+        const dailyInBatch = batch.filter(m => {
+            if (!m.endDate) return false;
+            const end = new Date(m.endDate).getTime();
+            const now = Date.now();
+            const hoursLeft = (end - now) / (1000 * 60 * 60);
+            return hoursLeft > 0 && hoursLeft <= 24;
+        });
+
+        // Add unique items
+        for (const item of dailyInBatch) {
+            if (!collected.find(c => c.id === item.id)) {
+                collected.push(item);
+            }
+        }
+
+        console.log(`Page ${i + 1}: Found ${dailyInBatch.length} daily markets. Total: ${collected.length}/${requiredCount}`);
+
+        if (collected.length >= requiredCount) break;
+
+        offset += batchSize;
+        await delay(200); // Polite rate limit
+    }
+
+    // Sort by volume descending to ensure quality
+    return collected.sort((a, b) => b.totalVolume - a.totalVolume).slice(0, requiredCount);
+}
