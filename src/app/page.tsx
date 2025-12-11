@@ -49,7 +49,7 @@ export default function Home() {
 
         // 1. Priority: Daily Markets (< 24h or keywords)
         const dailyMarkets = allEvents.filter((e: any) => {
-          const title = e.title.toLowerCase();
+          const title = (e.question || '').toLowerCase(); // FIX: Use 'question', not 'title'
           const isDailyKeyword = title.includes('daily') || title.includes('today') || title.includes('tomorrow') || title.includes('tonight');
 
           let isEndingSoon = false;
@@ -268,7 +268,7 @@ export default function Home() {
               </p>
             </div>
             <div className="mb-4 text-xs font-mono text-gray-700">
-              v0.2.1-CLIENT (Live)
+              v0.2.2-FIX (Live)
             </div>
             <div className="flex items-center justify-center gap-6 text-sm text-gray-500">
               <a href="https://x.com/ProphetProtocol" target="_blank" rel="noopener noreferrer" className="hover:text-purple-400 transition-colors">Twitter</a>
