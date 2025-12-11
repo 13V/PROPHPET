@@ -216,7 +216,7 @@ export async function fetchDailyMarkets(requiredCount = 50): Promise<any[]> {
     let collected: any[] = [];
     let offset = 0;
     const batchSize = 100; // API Limit usually
-    const maxPages = 10; // Don't loop forever
+    const maxPages = 20; // Scan 2000 items to ensure we find 50 daily ones
 
     console.log(`Starting prioritized search for ${requiredCount} daily markets...`);
 

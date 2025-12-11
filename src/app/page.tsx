@@ -24,8 +24,12 @@ const CONTRACT_ADDRESS = 'HqQqPtf7FgFySXDHrTzExbGKUt4axd1JJQRDr9kZpump';
 export default function Home() {
   const [copied, setCopied] = useState(false);
   // Initialize with snapshot for immediate content (Fail-safe)
-  // Initialize empty - pure Real Data
-  const [predictions, setPredictions] = useState<any[]>([]);
+  const [isAdmin, setIsAdmin] = useState(false);
+  // State for main prediction list
+  const [predictions, setPredictions] = useState<any[]>([]); // Keeping original initialization for predictions
+  // State for filtering "All Markets"
+  const [visibleCount, setVisibleCount] = useState(12);
+
   const [isLoading, setIsLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState("all");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -230,17 +234,28 @@ export default function Home() {
 
           {/* Explore All (Collapsible or just remaining) */}
           <section className="pt-8 border-t border-gray-800">
-            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-6 text-center">All Active Markets</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 opacity-60 hover:opacity-100 transition-opacity duration-500">
-              {predictions.slice(4, 12).map((prediction) => (
+            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-6 text-center">
+              All Active Markets ({predictions.length})
+            </h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 opacity-90 hover:opacity-100 transition-opacity duration-500">
+              {predictions.slice(4, visibleCount).map((prediction) => (
                 <div key={prediction.id} className="scale-95 origin-center">
                   <PredictionCard {...prediction} />
                 </div>
               ))}
             </div>
-            <div className="text-center mt-8">
-              <button className="px-6 py-2 bg-gray-900 border border-gray-700 rounded-full text-sm font-bold text-gray-400 hover:text-white transition-colors">Load More Markets</button>
-            </div>
+
+            {visibleCount < predictions.length && (
+              <div className="text-center mt-8">
+                <button
+                  onClick={() => setVisibleCount(prev => prev + 20)}
+                  className="px-6 py-2 bg-gray-900 border border-gray-700 rounded-full text-sm font-bold text-gray-400 hover:text-white transition-colors"
+                >
+                  Load More Markets ({predictions.length - visibleCount} remaining)
+                </button>
+              </div>
+            )}
           </section>
 
           {/* Educational Section */}
@@ -269,7 +284,7 @@ export default function Home() {
               </p>
             </div>
             <div className="mb-4 text-xs font-mono text-gray-700">
-              v0.2.2-FIX (Live)
+              v0.2.3-STRICT (Live)
             </div>
             <div className="flex items-center justify-center gap-6 text-sm text-gray-500">
               <a href="https://x.com/ProphetProtocol" target="_blank" rel="noopener noreferrer" className="hover:text-purple-400 transition-colors">Twitter</a>
