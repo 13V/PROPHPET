@@ -9,6 +9,7 @@ import { NavCategories } from "@/components/NavCategories";
 import { motion } from "framer-motion";
 import { Sparkles, ArrowRight, Twitter, Send, Copy, Check, Plus } from "lucide-react";
 import { CreateMarketModal } from '@/components/CreateMarketModal';
+import { UserPositions } from '@/components/UserPositions';
 
 import { fetchPolymarketTrending } from '@/services/polymarket';
 import { generateSyntheticMarkets } from '@/data/synthetic';
@@ -27,6 +28,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState("all");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isPositionsOpen, setIsPositionsOpen] = useState(false);
   const [fetchError, setFetchError] = useState<boolean | string>(false);
 
   useEffect(() => {
@@ -127,7 +129,16 @@ export default function Home() {
                 PROPHET PROTOCOL (LIVE)
               </h1>
             </div>
-            <WalletConnect />
+
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setIsPositionsOpen(true)}
+                className="text-sm font-bold text-gray-400 hover:text-white transition-colors flex items-center gap-2"
+              >
+                My Bets
+              </button>
+              <WalletConnect />
+            </div>
           </div>
         </div>
 
@@ -138,6 +149,7 @@ export default function Home() {
 
           {/* NEW: Featured Market Hero */}
           <CreateMarketModal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} />
+          <UserPositions isOpen={isPositionsOpen} onClose={() => setIsPositionsOpen(false)} />
 
           <section>
             <div className="flex items-center justify-between mb-2">
