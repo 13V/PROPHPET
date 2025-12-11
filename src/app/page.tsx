@@ -192,41 +192,95 @@ export default function Home() {
             <NavCategories active={activeCategory} onSelect={setActiveCategory} />
           </section>
 
-          {/* Dense Market Grid */}
+          {/* NEW: Categorized Sections */}
+
+          {/* 1. Trending (Mixed Top 4) */}
           <section>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="flex items-center justify-between mb-4"
-            >
-              <h2 className="relative z-10 text-2xl font-bold text-white flex items-center gap-2">
-                <span className="w-2 h-8 bg-purple-500 rounded-full" />
-                Trending Markets
-                <span className="text-sm font-normal text-gray-500 ml-2">
-                  ({predictions.filter(p => activeCategory === 'all' || p.category.toLowerCase() === activeCategory.toLowerCase()).length})
-                </span>
-              </h2>
-
-              <div className="flex gap-2">
-                <span className="px-3 py-1 text-xs font-medium text-purple-400 bg-purple-900/20 border border-purple-500/20 rounded cursor-pointer">🔥 Vol High</span>
-                <span className="px-3 py-1 text-xs font-medium text-gray-400 hover:text-white cursor-pointer transition-colors">✨ Newest</span>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="bg-red-500/10 p-2 rounded-lg border border-red-500/20">
+                <Sparkles className="w-5 h-5 text-red-500" />
               </div>
-            </motion.div>
-
-            {/* Denser Grid: 1 col mobile, 2 col tablet, 3 col desktop, 4 col huge */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {predictions.filter(p => activeCategory === 'all' || p.category.toLowerCase() === activeCategory.toLowerCase()).map((prediction, index) => (
+              <h2 className="text-2xl font-bold text-white">Trending Now</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {predictions.slice(0, 4).map((prediction, index) => (
                 <motion.div
                   key={prediction.id}
                   initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
                   transition={{ delay: index * 0.05 }}
                   className="h-full"
                 >
                   <PredictionCard {...prediction} />
                 </motion.div>
               ))}
+            </div>
+          </section>
+
+          {/* 2. Sports Section */}
+          <section>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="bg-orange-500/10 p-2 rounded-lg border border-orange-500/20">
+                <div className="w-5 h-5 text-orange-500 font-black flex items-center justify-center">⚽</div>
+              </div>
+              <h2 className="text-2xl font-bold text-white">Sports & Competition</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {predictions.filter(p => p.category === 'SPORTS').slice(0, 4).map((prediction, index) => (
+                <motion.div key={prediction.id} initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="h-full">
+                  <PredictionCard {...prediction} />
+                </motion.div>
+              ))}
+            </div>
+          </section>
+
+          {/* 3. Politics Section */}
+          <section>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="bg-blue-500/10 p-2 rounded-lg border border-blue-500/20">
+                <div className="w-5 h-5 text-blue-500 font-black flex items-center justify-center">⚖️</div>
+              </div>
+              <h2 className="text-2xl font-bold text-white">Political Landscape</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {predictions.filter(p => p.category === 'POLITICS').slice(0, 4).map((prediction, index) => (
+                <motion.div key={prediction.id} initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="h-full">
+                  <PredictionCard {...prediction} />
+                </motion.div>
+              ))}
+            </div>
+          </section>
+
+          {/* 4. Crypto Section */}
+          <section>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="bg-purple-500/10 p-2 rounded-lg border border-purple-500/20">
+                <div className="w-5 h-5 text-purple-500 font-black flex items-center justify-center">🚀</div>
+              </div>
+              <h2 className="text-2xl font-bold text-white">Crypto & Finance</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {predictions.filter(p => p.category === 'CRYPTO').slice(0, 4).map((prediction, index) => (
+                <motion.div key={prediction.id} initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="h-full">
+                  <PredictionCard {...prediction} />
+                </motion.div>
+              ))}
+            </div>
+          </section>
+
+          {/* Explore All (Collapsible or just remaining) */}
+          <section className="pt-8 border-t border-gray-800">
+            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-6 text-center">All Active Markets</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 opacity-60 hover:opacity-100 transition-opacity duration-500">
+              {predictions.slice(4, 12).map((prediction) => (
+                <div key={prediction.id} className="scale-95 origin-center">
+                  <PredictionCard {...prediction} />
+                </div>
+              ))}
+            </div>
+            <div className="text-center mt-8">
+              <button className="px-6 py-2 bg-gray-900 border border-gray-700 rounded-full text-sm font-bold text-gray-400 hover:text-white transition-colors">Load More Markets</button>
             </div>
           </section>
 

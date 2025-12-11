@@ -140,10 +140,17 @@ export async function fetchPolymarketTrending(limit = 50, offset = 0) {
 
 function classifyCategory(slug: string): 'CRYPTO' | 'POLITICS' | 'SPORTS' | 'NEWS' {
     const s = slug.toLowerCase();
-    if (s.includes('bitcoin') || s.includes('ethereum') || s.includes('solana') || s.includes('crypto') || s.includes('token') || s.includes('price') || s.includes('coin') || s.includes('market') || s.includes('etf')) return 'CRYPTO';
-    if (s.includes('trump') || s.includes('biden') || s.includes('election') || s.includes('republican') || s.includes('democrat') || s.includes('senate') || s.includes('house') || s.includes('president') || s.includes('nominee') || s.includes('cabinet') || s.includes('confirm') || s.includes('vote') || s.includes('policy')) return 'POLITICS';
-    if (s.includes('nfl') || s.includes('nba') || s.includes('soccer') || s.includes('league') || s.includes('cup') || s.includes('sport') || s.includes('fight') || s.includes('boxing') || s.includes('ufc') || s.includes('formula') || s.includes('champion') || s.includes('winner') || s.includes('score') || s.includes('vs')) return 'SPORTS';
-    return 'NEWS'; // Default fallback for everything else (instead of POP)
+
+    // 1. Politics (Highest Priority - Specific Names)
+    if (s.includes('trump') || s.includes('biden') || s.includes('harris') || s.includes('election') || s.includes('republican') || s.includes('democrat') || s.includes('senate') || s.includes('house') || s.includes('president') || s.includes('nominee') || s.includes('cabinet') || s.includes('confirm') || s.includes('vote') || s.includes('policy') || s.includes('poll')) return 'POLITICS';
+
+    // 2. Sports (Clubs, Leagues, Action words)
+    if (s.includes('nfl') || s.includes('nba') || s.includes('soccer') || s.includes('league') || s.includes('cup') || s.includes('sport') || s.includes('fight') || s.includes('boxing') || s.includes('ufc') || s.includes('formula') || s.includes('champion') || s.includes('winner') || s.includes('score') || s.includes('vs') || s.includes('fc ') || s.includes('united') || s.includes('real madrid') || s.includes('barcelona') || s.includes('liverpool') || s.includes('city') || s.includes('chelsea') || s.includes('arsenal') || s.includes('goal')) return 'SPORTS';
+
+    // 3. Crypto (Coins, Tokens)
+    if (s.includes('bitcoin') || s.includes('ethereum') || s.includes('solana') || s.includes('crypto') || s.includes('token') || s.includes('price') || s.includes('coin') || s.includes('market') || s.includes('etf') || s.includes('btc') || s.includes('eth') || s.includes('sol')) return 'CRYPTO';
+
+    return 'NEWS'; // Default fallback
 }
 
 function formatDate(dateStr: string) {
