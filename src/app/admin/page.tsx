@@ -87,21 +87,7 @@ export default function AdminPage() {
         downloadRewardsCSV();
     };
 
-    if (!connected) {
-        return (
-            <div className="min-h-screen bg-gradient-to-b from-gray-950 via-gray-900 to-gray-950 flex items-center justify-center p-6">
-                <div className="text-center">
-                    <Shield className="w-16 h-16 text-purple-500 mx-auto mb-4" />
-                    <h1 className="text-3xl font-bold text-white mb-4">Admin Panel</h1>
-                    <p className="text-gray-400 mb-6">Connect your wallet to access admin features</p>
-                    <WalletConnect />
-                </div>
-            </div>
-        );
-    }
-
-    // Access Denied Logic Removed - We want users to access the Key Deriver tool
-    // if (!isAdmin) { ... }</AccessDenied>
+    // Wallet Connection Check Removed - Allowing offline access for Key Deriver
 
     const totalRewardPool = allRewards.reduce((sum, r) => sum + r.totalRewardPool, 0);
     const totalWinners = allRewards.reduce((sum, r) => sum + r.totalWinners, 0);
@@ -118,12 +104,15 @@ export default function AdminPage() {
                     <WalletConnect />
                 </div>
 
-                {!isAdmin && (
+                {(!connected || !isAdmin) && (
                     <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4 mb-8 flex items-center gap-3">
                         <Lock className="w-5 h-5 text-yellow-500" />
                         <div>
                             <h3 className="font-bold text-yellow-500">Restricted Access</h3>
-                            <p className="text-sm text-yellow-200/70">You are not logged in as an Admin. You can only use the Developer Tools below.</p>
+                            <p className="text-sm text-yellow-200/70">
+                                {!connected ? "Wallet not connected. " : "Not logged in as Admin. "}
+                                You can only use the Developer Tools below.
+                            </p>
                         </div>
                     </div>
                 )}
