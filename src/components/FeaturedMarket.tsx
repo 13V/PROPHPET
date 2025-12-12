@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { saveVote } from '@/utils/voteStorage';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useToast } from '@/context/ToastContext';
+import { useBetSuccess } from '@/context/BetSuccessContext';
 
 interface FeaturedMarketProps {
     data?: {
@@ -26,6 +27,7 @@ interface FeaturedMarketProps {
 export const FeaturedMarket = ({ data, onOpenCreateModal }: FeaturedMarketProps) => {
     const { publicKey, connected, wallet } = useWallet();
     const { showToast } = useToast();
+    const { showBetSuccess } = useBetSuccess();
     const [betMode, setBetMode] = useState<'yes' | 'no' | null>(null);
     const [stakeAmount, setStakeAmount] = useState('');
 
@@ -49,7 +51,15 @@ export const FeaturedMarket = ({ data, onOpenCreateModal }: FeaturedMarketProps)
                 amount: parseFloat(stakeAmount)
             }, wallet?.adapter); // Pass adapter for signing
 
-            showToast(`Successfully bet ${stakeAmount} on ${betMode?.toUpperCase()}`, 'success');
+            // showToast(`Successfully bet ${stakeAmount} on ${betMode?.toUpperCase()}`, 'success'); 
+            // Replaced with Modal:
+            showBetSuccess({
+                amount: parseFloat(stakeAmount),
+                outcome: betMode as 'yes' | 'no',
+                question: data?.question || "Market",
+                payoutMultiplier: 1.85
+            });
+
             setBetMode(null);
             setStakeAmount('');
         } catch (e) {

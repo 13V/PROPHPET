@@ -10,6 +10,7 @@ import { fetchMarketResult } from '@/services/polymarket';
 import { Sparkline } from './Sparkline';
 import { ResolutionPanel } from './ResolutionPanel';
 import { useToast } from '@/context/ToastContext';
+import { useBetSuccess } from '@/context/BetSuccessContext';
 
 interface PredictionCardProps {
     id: number;
@@ -36,6 +37,7 @@ export const PredictionCard = ({
 }: PredictionCardProps) => {
     const { publicKey, connected } = useWallet();
     const { toast } = useToast();
+    const { showBetSuccess } = useBetSuccess();
 
     // ... existing hooks ...
     const [yesVotes, setYesVotes] = useState(initialYes);
@@ -140,7 +142,13 @@ export const PredictionCard = ({
         }
 
         setBetMode(null);
-        toast.success(`Vote Placed: ${amount} on ${choice === 'yes' ? yesLabel : noLabel}`);
+        // toast.success(`Vote Placed: ${amount} on ${choice === 'yes' ? yesLabel : noLabel}`);
+        showBetSuccess({
+            amount: amount,
+            outcome: choice,
+            question: question,
+            payoutMultiplier: 1.85 // Dynamic later
+        });
     };
 
     const totalVotes = yesVotes + noVotes;

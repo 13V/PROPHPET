@@ -13,7 +13,9 @@ if (typeof window !== 'undefined' && !window.Buffer) {
     window.Buffer = Buffer;
 }
 
-import { ToastProvider } from '@/context/ToastContext';
+import { BetSuccessProvider } from '@/context/BetSuccessContext';
+
+// ...
 
 export const Providers: FC<{ children: ReactNode }> = ({ children }) => {
     // The network can be set to 'devnet', 'testnet', or 'mainnet-beta'.
@@ -35,10 +37,13 @@ export const Providers: FC<{ children: ReactNode }> = ({ children }) => {
             <WalletProvider wallets={wallets} autoConnect>
                 <WalletModalProvider>
                     <ToastProvider>
-                        {children}
+                        <BetSuccessProvider>
+                            {children}
+                        </BetSuccessProvider>
                     </ToastProvider>
                 </WalletModalProvider>
             </WalletProvider>
         </ConnectionProvider>
     );
 };
+
