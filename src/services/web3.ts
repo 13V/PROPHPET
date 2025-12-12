@@ -9,7 +9,19 @@ const opts = {
 
 // Program ID from the IDL or Devnet
 // HOST: Using a temporary valid placeholder to allow build to pass. Update this after deployment!
-const PROGRAM_ID = new PublicKey("HqQqPtf7FgFySXDHrTzExbGKUt4axd1JJQRDr9kZpump");
+export const PROGRAM_ID = new PublicKey("HqQqPtf7FgFySXDHrTzExbGKUt4axd1JJQRDr9kZpump");
+
+export const USDC_MINT = new PublicKey("4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU"); // Devnet USDC
+const SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID = new PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL');
+const TOKEN_PROGRAM_ID = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
+
+export const getATA = async (owner: PublicKey, mint: PublicKey) => {
+    const [ata] = await PublicKey.findProgramAddress(
+        [owner.toBuffer(), TOKEN_PROGRAM_ID.toBuffer(), mint.toBuffer()],
+        SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID
+    );
+    return ata;
+};
 
 export const getProvider = (wallet: any) => {
     if (!wallet) return null;

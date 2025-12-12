@@ -1,5 +1,7 @@
-import { getProgram, getVotePDA } from '@/services/web3';
+import { getProgram, getVotePDA, getATA, USDC_MINT } from '@/services/web3';
 import { PublicKey } from '@solana/web3.js';
+import * as anchor from '@project-serum/anchor';
+import { web3 } from '@project-serum/anchor';
 
 export interface Vote {
     predictionId: number;
@@ -34,13 +36,24 @@ export async function saveVote(vote: Vote, wallet?: any): Promise<string | void>
                 const marketKey = new PublicKey("11111111111111111111111111111111");
                 const votePda = await getVotePDA(marketKey, wallet.publicKey);
 
+                // Derive Token Accounts
+                const userToken = await getATA(wallet.publicKey, USDC_MINT);
+                const vaultToken = await getATA(marketKey, USDC_MINT);
+
+                // IMPORTANT: In production, we need a way to ensure the Vault ATA exists. 
+                // The `initializeMarket` instruction usually creates it.
+                // Here we assume it exists for the MVP smart contract calls.
+
                 // Call the Smart Contract
-                // @ts-ignore - Dynamic Method from IDL
                 const tx = await program.methods.placeVote(outcomeIndex, new anchor.BN(amount))
                     .accounts({
                         market: marketKey,
                         vote: votePda,
+                        vaultToken: vaultToken,
+                        userToken: userToken,
                         user: wallet.publicKey,
+                        systemProgram: web3.SystemProgram.programId,
+                        tokenProgram: new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'),
                     })
                     .rpc();
 

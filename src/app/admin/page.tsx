@@ -174,7 +174,7 @@ export default function AdminPage() {
                 </div>
 
                 {/* Export Button */}
-                <div className="mb-8">
+                <div className="mb-8 flex gap-4">
                     <button
                         onClick={handleDownloadRewards}
                         className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg font-bold text-white hover:scale-105 transition-all flex items-center gap-2"
@@ -182,6 +182,46 @@ export default function AdminPage() {
                         <Download className="w-5 h-5" />
                         Export Rewards CSV
                     </button>
+                </div>
+
+                {/* Developer Tools (Key Deriver) */}
+                <div className="mb-8 p-6 bg-gray-900/50 border border-gray-800 rounded-xl">
+                    <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                        <Lock className="w-5 h-5 text-yellow-500" />
+                        Developer Tools: Key Deriver
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label className="block text-sm text-gray-400 mb-2">Secret Key JSON (Paste content of program-keypair.json)</label>
+                            <textarea
+                                id="sk-input"
+                                className="w-full h-24 bg-black/40 border border-gray-700 rounded-lg p-3 text-xs font-mono text-gray-300 focus:border-purple-500 outline-none"
+                                placeholder="[123, 45, 67, ...]"
+                            />
+                        </div>
+                        <div className="flex flex-col justify-center">
+                            <button
+                                onClick={() => {
+                                    try {
+                                        const input = (document.getElementById('sk-input') as HTMLTextAreaElement).value;
+                                        const secretKey = Uint8Array.from(JSON.parse(input));
+                                        const { Keypair } = require('@solana/web3.js'); // Lazy load to avoid SSR issues if any
+                                        const kp = Keypair.fromSecretKey(secretKey);
+                                        alert(`Public Key: ${kp.publicKey.toString()}`);
+                                        console.log("Derived Public Key:", kp.publicKey.toString());
+                                    } catch (e: any) {
+                                        alert("Error deriving key: " + e.message);
+                                    }
+                                }}
+                                className="px-6 py-3 bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-lg font-bold text-white transition-all mb-2"
+                            >
+                                Calculate Public Key
+                            </button>
+                            <p className="text-xs text-gray-500">
+                                This runs entirely in your browser. The key is not sent anywhere.
+                            </p>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Predictions List */}
