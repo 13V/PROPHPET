@@ -77,6 +77,67 @@ export const UserPositions = ({ isOpen, onClose }: UserPositionsProps) => {
                             </div>
                         </div>
 
+                        {/* Ranks & Progress */}
+                        <div className="px-6 pb-6 pt-2">
+                            <div className="bg-gradient-to-r from-gray-800 to-gray-900 rounded-xl p-4 border border-gray-700 relative overflow-hidden">
+                                {(() => {
+                                    const xp = totalStaked;
+                                    const ranks = [
+                                        { name: 'Novice', threshold: 0, color: 'text-gray-400' },
+                                        { name: 'Apprentice', threshold: 1000, color: 'text-blue-400' },
+                                        { name: 'Strategist', threshold: 5000, color: 'text-purple-400' },
+                                        { name: 'Oracle', threshold: 10000, color: 'text-yellow-400' },
+                                        { name: 'Whale', threshold: 50000, color: 'text-cyan-400' }
+                                    ];
+                                    const currentRankIndex = ranks.slice().reverse().findIndex(r => xp >= r.threshold);
+                                    const rankIndex = currentRankIndex === -1 ? 0 : ranks.length - 1 - currentRankIndex;
+                                    const currentRank = ranks[rankIndex];
+                                    const nextRank = ranks[rankIndex + 1];
+
+                                    let progress = 100;
+                                    if (nextRank) {
+                                        const range = nextRank.threshold - currentRank.threshold;
+                                        const current = xp - currentRank.threshold;
+                                        progress = Math.min(100, Math.max(0, (current / range) * 100));
+                                    }
+
+                                    return (
+                                        <div>
+                                            <div className="flex justify-between items-end mb-2 relative z-10">
+                                                <div>
+                                                    <div className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Current Rank</div>
+                                                    <div className={`text-xl font-black ${currentRank.color}`}>{currentRank.name}</div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <div className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">
+                                                        {nextRank ? `Next: ${nextRank.name}` : 'Max Rank'}
+                                                    </div>
+                                                    <div className="text-xs font-mono text-gray-300">
+                                                        {nextRank
+                                                            ? `${Math.floor(nextRank.threshold - xp).toLocaleString()} XP to go`
+                                                            : 'You are legendary.'}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Progress Bar */}
+                                            <div className="h-3 bg-gray-950 rounded-full overflow-hidden border border-gray-800 relative z-10">
+                                                <motion.div
+                                                    initial={{ width: 0 }}
+                                                    animate={{ width: `${progress}%` }}
+                                                    transition={{ duration: 1, ease: "easeOut" }}
+                                                    className={`h-full ${currentRank.name === 'Whale' ? 'bg-cyan-500' : 'bg-purple-600'}`}
+                                                />
+                                            </div>
+
+                                            {/* Background Glow */}
+                                            <div className={`absolute -right-10 -top-10 w-32 h-32 rounded-full blur-[50px] opacity-20 ${currentRank.name === 'Whale' ? 'bg-cyan-500' : 'bg-purple-600'}`} />
+                                        </div>
+                                    );
+                                })()}
+                            </div>
+                        </div>
+
                         {/* Positions List */}
                         <div className="flex-1 overflow-y-auto px-6 pb-6">
                             <h3 className="text-sm font-bold text-gray-400 mb-4 sticky top-0 bg-[#0f172a] py-2 z-10 flex items-center gap-2">

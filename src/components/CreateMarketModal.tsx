@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Lock, Unlock, Rocket, Calendar, Tag } from 'lucide-react';
+import confetti from 'canvas-confetti';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { saveUserMarket } from '@/utils/marketStorage';
 import { hasMinimumTokens, getTokenBalance } from '@/utils/tokenGating';
@@ -81,6 +82,12 @@ export const CreateMarketModal = ({ isOpen, onClose }: CreateMarketModalProps) =
         };
 
         saveUserMarket(newMarket);
+
+        confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 }
+        });
 
         alert("Market Successfully Created on Protocol! 🚀");
         onClose();

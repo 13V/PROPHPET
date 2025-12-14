@@ -30,8 +30,26 @@ export const Sparkline: React.FC<SparklineProps> = ({
         return `${x},${y}`;
     }).join(' ');
 
+    const areaPoints = `${0},${height} ${points} ${width},${height}`;
+
+    // Simple ID generation
+    const id = `gradient-${Math.random().toString(36).substr(2, 9)}`;
+
     return (
         <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full overflow-visible" preserveAspectRatio="none">
+            <defs>
+                <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={color} stopOpacity="0.5" />
+                    <stop offset="100%" stopColor={color} stopOpacity="0" />
+                </linearGradient>
+            </defs>
+            <motion.path
+                d={`M ${areaPoints} Z`}
+                fill={`url(#${id})`}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+            />
             <motion.path
                 d={`M ${points}`}
                 fill="none"
@@ -42,6 +60,7 @@ export const Sparkline: React.FC<SparklineProps> = ({
                 initial={{ pathLength: 0, opacity: 0 }}
                 animate={{ pathLength: 1, opacity: 1 }}
                 transition={{ duration: 1.5, ease: "easeInOut" }}
+                style={{ filter: `drop-shadow(0 0 4px ${color}80)` }}
             />
         </svg>
     );
