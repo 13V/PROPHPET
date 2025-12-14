@@ -18,6 +18,8 @@ export const CreateMarketModal = ({ isOpen, onClose }: CreateMarketModalProps) =
     const { publicKey } = useWallet();
     const [balance, setBalance] = useState<number | null>(null);
     const [eligible, setEligible] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+
     // Variants for responsive animation
     const modalVariants = {
         hidden: {
