@@ -150,7 +150,7 @@ export async function fetchPolymarketTrending(limit = 50, offset = 0, sortBy = '
 
                 return {
                     id: parseInt(market.id) || parseInt(event.id) || Math.random() * 100000,
-                    question: event.title,
+                    question: market.question || event.title,
                     category: classifyCategory(event.slug),
                     endDate: market.endDate,
                     outcomeLabels: outcomes,
