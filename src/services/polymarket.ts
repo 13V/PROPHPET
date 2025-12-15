@@ -299,7 +299,7 @@ export async function fetchDailyMarkets(requiredCount = 50): Promise<any[]> {
                 // We fetch 'volume' sorted to get best items
                 // Note: We might NOT filter strictly by 24h here if it's too empty, 
                 // but let's try to stick to quality. 
-                const fillBatch = await fetchPolymarketTrending(20, 0, 'volume', false, tag);
+                const fillBatch = await fetchPolymarketTrending(100, 0, 'volume', false, tag);
 
                 let added = 0;
                 for (const item of fillBatch) {
