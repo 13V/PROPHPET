@@ -100,8 +100,25 @@ export async function fetchPolymarketTrending(limit = 50, offset = 0, sortBy = '
                 }
 
                 // Ensure it's an array
-                if (!Array.isArray(outcomes)) {
+                if (!Array.isArray(outcomes) || outcomes.length === 0) {
                     outcomes = ["YES", "NO"];
+                }
+
+                // Heuristic: If Outcomes are generic "Yes, No" but Title contains " vs ", try to infer teams
+                // This fixes the issue where Sports markets show "Yes/No" instead of Team Names
+                if (outcomes.length === 2 && outcomes[0].toLowerCase() === 'yes' && outcomes[1].toLowerCase() === 'no') {
+                    const titleV = event.title || event.slug || "";
+                    if (titleV.includes(" vs ") || titleV.includes(" vs. ")) {
+                        const parts = titleV.split(/ vs\.? /i);
+                        if (parts.length === 2) {
+                            // Clean up names (remove trailing punctuation etc)
+                            const teamA = parts[0].trim();
+                            const teamB = parts[1].trim();
+                            if (teamA.length < 20 && teamB.length < 20) { // Safety check
+                                outcomes = [teamA, teamB];
+                            }
+                        }
+                    }
                 }
 
                 return {
@@ -212,22 +229,22 @@ export async function fetchDailyMarkets(requiredCount = 50): Promise<any[]> {
     let collected: any[] = [];
     let offset = 0;
     const batchSize = 100;
-    const maxPages = 20; // Scan up to 2000 items
+    const maxPages = 50; // Scan up to 5000 items (User Requested Deep Scan)
 
     console.log(`Starting prioritized search for ${requiredCount} daily markets...`);
 
     try {
         for (let i = 0; i < maxPages; i++) {
             // Strategy: FETCH BY END DATE (Ascending) to find markets closing soon
-            // Filter: Must have some volume > $100 to be worth showing
+            // Filter: Must have some volume > $1000 to be worth showing (Increased threshold for quality)
             const batch = await fetchPolymarketTrending(batchSize, offset, 'endDate', true);
 
             if (batch.length === 0) break; // End of data
 
             // Filter this batch
             const dailyInBatch = batch.filter(m => {
-                // Must have volume to be relevant (avoid garbage spam)
-                if (m.totalVolume < 100) return false;
+                // Must have significant volume (Avoids junk)
+                if (m.totalVolume < 1000) return false;
 
                 if (!m.endDate) return false;
                 const end = new Date(m.endDate).getTime();
@@ -250,7 +267,7 @@ export async function fetchDailyMarkets(requiredCount = 50): Promise<any[]> {
             if (collected.length >= requiredCount) break;
 
             offset += batchSize;
-            await delay(200); // Polite rate limit
+            await delay(150); // Polite rate limit
         }
     } catch (e) {
         console.warn("Error during strict scan loop:", e);
@@ -275,6 +292,6 @@ export async function fetchDailyMarkets(requiredCount = 50): Promise<any[]> {
         }
     }
 
-    // Sort by volume descending to ensure quality
+    // Sort by volume descending to ensure quality and consistency for all users
     return collected.sort((a, b) => b.totalVolume - a.totalVolume).slice(0, requiredCount);
 }
