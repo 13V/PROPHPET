@@ -104,19 +104,34 @@ export async function fetchPolymarketTrending(limit = 50, offset = 0, sortBy = '
                     outcomes = ["YES", "NO"];
                 }
 
-                // Heuristic: If Outcomes are generic "Yes, No" but Title contains " vs ", try to infer teams
-                // This fixes the issue where Sports markets show "Yes/No" instead of Team Names
-                if (outcomes.length === 2 && outcomes[0].toLowerCase() === 'yes' && outcomes[1].toLowerCase() === 'no') {
+                // Heuristic: Smart Labeling for Sports/Esports
+                // Problem: Polymarket often returns "Yes/No" for "Will Team A win?"
+                // Solution: Extract Team/Player names from the question for better UX.
+                const isBinary = outcomes.length === 2 &&
+                    (['yes', 'no', 'over', 'under', 'win', 'lose'].includes(outcomes[0].toLowerCase()) ||
+                        ['yes', 'no', 'over', 'under', 'win', 'lose'].includes(outcomes[1].toLowerCase()));
+
+                if (isBinary) {
                     const titleV = event.title || event.slug || "";
+
+                    // Case A: "Team A vs Team B" (Standard)
                     if (titleV.includes(" vs ") || titleV.includes(" vs. ")) {
                         const parts = titleV.split(/ vs\.? /i);
                         if (parts.length === 2) {
-                            // Clean up names (remove trailing punctuation etc)
-                            const teamA = parts[0].trim();
-                            const teamB = parts[1].trim();
-                            if (teamA.length < 20 && teamB.length < 20) { // Safety check
+                            // Remove "Will " prefix and " win?" suffix if present to get clean team names
+                            const teamA = parts[0].replace(/^Will\s+/i, '').replace(/\s+win\??$/i, '').trim();
+                            const teamB = parts[1].replace(/\s+win\??$/i, '').replace(/\?$/, '').trim();
+
+                            if (teamA.length < 30 && teamB.length < 30) {
                                 outcomes = [teamA, teamB];
                             }
+                        }
+                    }
+                    // Case B: "Will Team A beat Team B?"
+                    else if (titleV.match(/Will (.+) beat (.+)\?/i)) {
+                        const match = titleV.match(/Will (.+) beat (.+)\?/i);
+                        if (match && match.length === 3) {
+                            outcomes = [match[1].trim(), match[2].trim()];
                         }
                     }
                 }
