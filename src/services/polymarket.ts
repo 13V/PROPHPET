@@ -137,14 +137,14 @@ export async function fetchPolymarketTrending(limit = 50, offset = 0, sortBy = '
 function classifyCategory(slug: string): 'CRYPTO' | 'POLITICS' | 'SPORTS' | 'NEWS' {
     const s = slug.toLowerCase();
 
-    // 1. Politics (Highest Priority - Specific Names)
-    if (s.includes('trump') || s.includes('biden') || s.includes('harris') || s.includes('election') || s.includes('republican') || s.includes('democrat') || s.includes('senate') || s.includes('house') || s.includes('president') || s.includes('nominee') || s.includes('cabinet') || s.includes('confirm') || s.includes('vote') || s.includes('policy') || s.includes('poll')) return 'POLITICS';
+    // 1. Politics (Highest Priority - Specific Names & Terms)
+    if (s.includes('trump') || s.includes('biden') || s.includes('harris') || s.includes('election') || s.includes('republican') || s.includes('democrat') || s.includes('senate') || s.includes('house') || s.includes('president') || s.includes('nominee') || s.includes('cabinet') || s.includes('confirm') || s.includes('vote') || s.includes('policy') || s.includes('poll') || s.includes('approval') || s.includes('regulation') || s.includes('law') || s.includes('court') || s.includes('supreme') || s.includes('congress') || s.includes('parliament') || s.includes('minister') || s.includes('war') || s.includes('israel') || s.includes('ukraine') || s.includes('china') || s.includes('nato') || s.includes('un ') || s.includes('musk') || s.includes('rfk') || s.includes('vivek')) return 'POLITICS';
 
     // 2. Sports (Clubs, Leagues, Action words)
-    if (s.includes('nfl') || s.includes('nba') || s.includes('soccer') || s.includes('league') || s.includes('cup') || s.includes('sport') || s.includes('fight') || s.includes('boxing') || s.includes('ufc') || s.includes('formula') || s.includes('champion') || s.includes('winner') || s.includes('score') || s.includes('vs') || s.includes('fc ') || s.includes('united') || s.includes('real madrid') || s.includes('barcelona') || s.includes('liverpool') || s.includes('city') || s.includes('chelsea') || s.includes('arsenal') || s.includes('goal')) return 'SPORTS';
+    if (s.includes('nfl') || s.includes('nba') || s.includes('soccer') || s.includes('league') || s.includes('cup') || s.includes('sport') || s.includes('fight') || s.includes('boxing') || s.includes('ufc') || s.includes('mma') || s.includes('formula') || s.includes('f1') || s.includes('champion') || s.includes('winner') || s.includes('score') || s.includes('vs') || s.includes('fc ') || s.includes('united') || s.includes('real madrid') || s.includes('barcelona') || s.includes('liverpool') || s.includes('city') || s.includes('chelsea') || s.includes('arsenal') || s.includes('goal') || s.includes('points') || s.includes('touchdown') || s.includes('over/under') || s.includes('handicap')) return 'SPORTS';
 
-    // 3. Crypto (Coins, Tokens)
-    if (s.includes('bitcoin') || s.includes('ethereum') || s.includes('solana') || s.includes('crypto') || s.includes('token') || s.includes('price') || s.includes('coin') || s.includes('market') || s.includes('etf') || s.includes('btc') || s.includes('eth') || s.includes('sol')) return 'CRYPTO';
+    // 3. Crypto (Coins, Tokens, Finance)
+    if (s.includes('bitcoin') || s.includes('ethereum') || s.includes('solana') || s.includes('crypto') || s.includes('token') || s.includes('price') || s.includes('coin') || s.includes('market') || s.includes('etf') || s.includes('btc') || s.includes('eth') || s.includes('sol') || s.includes('memecoin') || s.includes('pepe') || s.includes('doge') || s.includes('bonk') || s.includes('wif') || s.includes('fed ') || s.includes('rates') || s.includes('inflation')) return 'CRYPTO';
 
     return 'NEWS'; // Default fallback
 }
