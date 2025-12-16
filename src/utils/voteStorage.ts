@@ -1,7 +1,6 @@
 import { getProgram, getVotePDA, getATA, BETTING_MINT } from '@/services/web3';
 import { PublicKey } from '@solana/web3.js';
-import * as anchor from '@project-serum/anchor';
-import { web3 } from '@project-serum/anchor';
+import { BN, web3 } from '@project-serum/anchor';
 
 export interface Vote {
     predictionId: number;
@@ -45,7 +44,7 @@ export async function saveVote(vote: Vote, wallet?: any): Promise<string | void>
                 // Here we assume it exists for the MVP smart contract calls.
 
                 // Call the Smart Contract
-                const tx = await program.methods.placeVote(outcomeIndex, new anchor.BN(amount))
+                const tx = await program.methods.placeVote(outcomeIndex, new BN(amount))
                     .accounts({
                         market: marketKey,
                         vote: votePda,

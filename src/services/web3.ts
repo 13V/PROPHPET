@@ -1,6 +1,6 @@
 import { Connection, PublicKey, Transaction } from '@solana/web3.js';
 import { Program, AnchorProvider, web3, Idl } from '@project-serum/anchor';
-import idl from '@/idls/prophet.json';
+import idl from '@/idl/prophet.json';
 
 const network = 'https://api.devnet.solana.com';
 const opts = {
@@ -9,7 +9,7 @@ const opts = {
 
 // Program ID from the IDL or Devnet
 // HOST: Using a temporary valid placeholder to allow build to pass. Update this after deployment!
-export const PROGRAM_ID = new PublicKey("8f4FusHQaT2KxwpZzRNTV6TpdaEu68bcLFfJKBwZ3koE");
+export const PROGRAM_ID = new PublicKey('8VKvD2RaKok4tJ4pibwqZ2xvh3YkqbBd6BGKaDHUAP5r');
 
 // Token used for betting (PROPHET)
 export const BETTING_MINT = new PublicKey("HqQqPtf7FgFySXDHrTzExbGKUt4axd1JJQRDr9kZpump");
