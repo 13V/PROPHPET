@@ -4,11 +4,12 @@ import { motion } from 'framer-motion';
 import { TrendingUp, Users, DollarSign, Clock, ArrowUpRight, Activity } from 'lucide-react';
 import { Sparkline } from './Sparkline';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { saveVote } from '@/utils/voteStorage';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useToast } from '@/context/ToastContext';
 import { useBetSuccess } from '@/context/BetSuccessContext';
+import { getPythSparkline } from '@/services/pyth';
 
 interface FeaturedMarketProps {
     data?: {
@@ -31,6 +32,22 @@ export const FeaturedMarket = ({ data, onOpenCreateModal, onOpenExpanded }: Feat
     const { showBetSuccess } = useBetSuccess();
     const [betMode, setBetMode] = useState<'yes' | 'no' | null>(null);
     const [stakeAmount, setStakeAmount] = useState('');
+    const [pythData, setPythData] = useState<number[] | null>(null);
+
+    // Pyth Integration
+    useEffect(() => {
+        if (data?.category?.toLowerCase().includes('crypto') || data?.question?.toLowerCase().includes('bitcoin')) {
+            const q = data?.question?.toLowerCase() || '';
+            let symbol = '';
+            if (q.includes('bitcoin') || q.includes('btc')) symbol = 'BTC';
+            else if (q.includes('ethereum') || q.includes('eth')) symbol = 'ETH';
+            else if (q.includes('solana') || q.includes('sol')) symbol = 'SOL';
+
+            if (symbol) {
+                getPythSparkline(symbol).then(setPythData);
+            }
+        }
+    }, [data]);
 
     const handleConfirmBet = async () => {
         if (!connected || !publicKey) {
@@ -172,7 +189,7 @@ export const FeaturedMarket = ({ data, onOpenCreateModal, onOpenExpanded }: Feat
 
                         {/* Seamless Chart Container */}
                         <div className="h-[100px] md:h-[140px] w-full relative overflow-hidden mask-linear-fade">
-                            <Sparkline data={bigChartData} width={800} height={140} color={theme.color} />
+                            <Sparkline data={pythData || bigChartData} width={800} height={140} color={theme.color} />
                             {/* Gradient Overlay for Fade */}
                             <div
                                 className="absolute inset-x-0 bottom-0 h-1/2 opacity-30 pointer-events-none"

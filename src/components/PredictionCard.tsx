@@ -8,6 +8,7 @@ import { getDeterministicPattern } from '@/utils/chartPatterns';
 import { Sparkline } from './Sparkline';
 import { useToast } from '@/context/ToastContext';
 import { useHaptic } from '@/hooks/useHaptic';
+import { getPythSparkline } from '@/services/pyth';
 
 interface PredictionCardProps {
     id: number;
@@ -48,9 +49,25 @@ export const PredictionCard = ({
     const [betMode, setBetMode] = useState<number | null>(null);
     const [stakeAmount, setStakeAmount] = useState('');
     const [showAllOutcomes, setShowAllOutcomes] = useState(false);
+    const [pythData, setPythData] = useState<number[] | null>(null);
 
     // Lifecycle Logic
     const isExpired = Date.now() > endTime * 1000;
+
+    // Derived Data for Pyth
+    useEffect(() => {
+        if (category.toLowerCase().includes('crypto')) {
+            const q = question.toLowerCase();
+            let symbol = '';
+            if (q.includes('bitcoin') || q.includes('btc')) symbol = 'BTC';
+            else if (q.includes('ethereum') || q.includes('eth')) symbol = 'ETH';
+            else if (q.includes('solana') || q.includes('sol')) symbol = 'SOL';
+
+            if (symbol) {
+                getPythSparkline(symbol).then(setPythData);
+            }
+        }
+    }, [category, question]);
 
     // Dynamic Category Coloring (Professional Themes)
     const getCategoryTheme = (cat: string) => {
@@ -199,7 +216,12 @@ export const PredictionCard = ({
                     </h3>
                 </div>
                 <div className="shrink-0 w-14 h-8 opacity-60 group-hover:opacity-100 transition-all duration-500">
-                    <Sparkline data={getDeterministicPattern(id, outcomeProbabilities[0])} width={56} height={32} color={resolved ? '#4b5563' : theme.color} />
+                    <Sparkline
+                        data={pythData || getDeterministicPattern(id, outcomeProbabilities[0])}
+                        width={56}
+                        height={32}
+                        color={resolved ? '#4b5563' : theme.color}
+                    />
                 </div>
             </div>
 
