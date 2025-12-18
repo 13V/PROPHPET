@@ -67,6 +67,18 @@ export const FeaturedMarket = ({ data, onOpenCreateModal }: FeaturedMarketProps)
             toast.error('Failed to place vote');
         }
     };
+    // Dynamic Category Coloring (Professional Themes)
+    const getCategoryTheme = (cat: string) => {
+        const c = cat.toLowerCase();
+        if (c.includes('crypto')) return { color: '#06b6d4', glow: 'rgba(6, 182, 212, 0.15)', text: 'text-cyan-400', border: 'border-cyan-500/30' };
+        if (c.includes('politics')) return { color: '#ef4444', glow: 'rgba(239, 68, 68, 0.15)', text: 'text-red-400', border: 'border-red-500/30' };
+        if (c.includes('sports')) return { color: '#f59e0b', glow: 'rgba(245, 158, 11, 0.15)', text: 'text-amber-400', border: 'border-amber-500/30' };
+        if (c.includes('news')) return { color: '#10b981', glow: 'rgba(16, 185, 129, 0.15)', text: 'text-emerald-400', border: 'border-emerald-500/30' };
+        return { color: '#a855f7', glow: 'rgba(168, 85, 247, 0.15)', text: 'text-purple-400', border: 'border-purple-500/30' }; // Default
+    };
+
+    const theme = getCategoryTheme(data?.category || 'crypto');
+
     // Determine Yes % (default 50 if no data or 0 votes)
     const totalVotes = data ? (data.yesVotes + data.noVotes) : 0;
     const yesPercentage = totalVotes > 0 ? ((data!.yesVotes / totalVotes) * 100) : 50;
@@ -99,55 +111,58 @@ export const FeaturedMarket = ({ data, onOpenCreateModal }: FeaturedMarketProps)
 
                     <div className="z-10 mt-8 md:mt-0">
                         <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-6 flex-wrap">
-                            <span className="bg-purple-500/10 border border-purple-500/30 text-purple-300 text-[10px] md:text-xs font-mono font-bold px-2 py-1 md:px-3 md:py-1 rounded-sm flex items-center gap-2 tracking-wider">
-                                <TrendingUp size={12} /> #1 TRENDING
+                            <span className="bg-white/5 border border-white/10 text-white text-[10px] md:text-xs font-mono font-bold px-2 py-1 md:px-3 md:py-1 rounded-sm flex items-center gap-2 tracking-widest uppercase">
+                                <TrendingUp size={12} className={theme.text} /> #1 TRENDING
                             </span>
-                            <span className="text-gray-500 text-xs md:text-sm font-mono tracking-wide uppercase">
+                            <span className={`text-[10px] md:text-xs font-bold uppercase tracking-widest ${theme.text}`}>
                                 {data?.category || 'Politics'} • Ends {data?.timeLeft || 'Today'}
                             </span>
                         </div>
 
-                        <h2 className="text-2xl md:text-4xl lg:text-5xl font-black text-white mb-4 md:mb-6 leading-[1.1] tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">
+                        <h2 className="text-3xl md:text-5xl lg:text-6xl font-black text-white mb-4 md:mb-8 leading-[1.05] tracking-tight">
                             {data?.question || "Will Bitcoin close higher today?"}
                         </h2>
 
-                        <div className="flex flex-wrap items-center gap-4 md:gap-8 mt-2 md:mt-4 text-sm text-gray-400 font-mono">
-                            <div className="flex items-center gap-2 md:gap-3">
-                                <div className="p-1.5 md:p-2 bg-green-500/10 rounded-lg text-green-400">
-                                    <Activity size={16} />
+                        <div className="flex flex-wrap items-center gap-4 md:gap-10 mt-2 md:mt-4 text-[10px] md:text-xs text-gray-400 font-bold tracking-widest uppercase">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-white/5 border border-white/10 rounded-lg">
+                                    <Activity size={16} className={theme.text} />
                                 </div>
                                 <div className="flex flex-col">
-                                    <span className="text-[10px] md:text-xs text-gray-500 uppercase">Volume</span>
-                                    <span className="text-white font-bold text-xs md:text-base">${data?.totalVolume ? data.totalVolume.toLocaleString() : '4.2m'}</span>
+                                    <span className="text-gray-600">Volume</span>
+                                    <span className="text-white">${data?.totalVolume ? data.totalVolume.toLocaleString() : '4.2M'}</span>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-2 md:gap-3">
-                                <div className="p-1.5 md:p-2 bg-blue-500/10 rounded-lg text-blue-400">
-                                    <Users size={16} />
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-white/5 border border-white/10 rounded-lg">
+                                    <Users size={16} className="text-blue-500" />
                                 </div>
                                 <div className="flex flex-col">
-                                    <span className="text-[10px] md:text-xs text-gray-500 uppercase">Traders</span>
-                                    <span className="text-white font-bold text-xs md:text-base">12.5k</span>
+                                    <span className="text-gray-600">Traders</span>
+                                    <span className="text-white">12.5K</span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     {/* Big Chart Area */}
-                    <div className="mt-8 md:mt-12">
-                        <div className="flex items-end gap-3 md:gap-4 mb-4">
-                            <div className="text-4xl md:text-6xl font-black text-white tracking-tighter">{yesPrice}%</div>
-                            <div className="text-green-400 font-mono text-sm md:text-lg mb-1 md:mb-2 flex items-center">
-                                <ArrowUpRight size={16} className="md:w-5 md:h-5" />
-                                +{(data?.question.length ? (data.question.length % 15) + 1.5 : 12.4).toFixed(1)}% today
+                    <div className="mt-8 md:mt-16">
+                        <div className="flex items-end gap-3 md:gap-4 mb-6">
+                            <div className="text-5xl md:text-7xl font-black text-white tracking-tighter">{yesPrice}%</div>
+                            <div className="text-green-400 font-bold text-sm md:text-lg mb-2 flex items-center gap-1">
+                                <ArrowUpRight size={18} />
+                                +{(data?.question.length ? (data.question.length % 15) + 1.5 : 12.4).toFixed(1)}% TODAY
                             </div>
                         </div>
 
                         {/* Seamless Chart Container */}
-                        <div className="h-[80px] md:h-[120px] w-full relative overflow-hidden mask-linear-fade">
-                            <Sparkline data={bigChartData} width={800} height={120} color="#a855f7" />
+                        <div className="h-[100px] md:h-[140px] w-full relative overflow-hidden mask-linear-fade">
+                            <Sparkline data={bigChartData} width={800} height={140} color={theme.color} />
                             {/* Gradient Overlay for Fade */}
-                            <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-transparent to-transparent opacity-80" />
+                            <div
+                                className="absolute inset-x-0 bottom-0 h-1/2 opacity-30 pointer-events-none"
+                                style={{ background: `linear-gradient(to top, ${theme.color}, transparent)` }}
+                            />
                         </div>
                     </div>
                 </div>

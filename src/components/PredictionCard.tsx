@@ -45,13 +45,17 @@ export const PredictionCard = ({
     const [stakeAmount, setStakeAmount] = useState('');
     const [showAllOutcomes, setShowAllOutcomes] = useState(false);
 
-    // Derived data
-    const totalVotes = totals.reduce((a, b) => a + b, 0);
-    const outcomeProbabilities = totals.map(t => totalVotes > 0 ? (t / totalVotes) * 100 : 100 / outcomes.length);
+    // Dynamic Category Coloring (Professional Themes)
+    const getCategoryTheme = (cat: string) => {
+        const c = cat.toLowerCase();
+        if (c.includes('crypto')) return { color: '#06b6d4', glow: 'rgba(6, 182, 212, 0.15)', text: 'text-cyan-400', border: 'border-cyan-500/30' };
+        if (c.includes('politics')) return { color: '#ef4444', glow: 'rgba(239, 68, 68, 0.15)', text: 'text-red-400', border: 'border-red-500/30' };
+        if (c.includes('sports')) return { color: '#f59e0b', glow: 'rgba(245, 158, 11, 0.15)', text: 'text-amber-400', border: 'border-amber-500/30' };
+        if (c.includes('news')) return { color: '#10b981', glow: 'rgba(16, 185, 129, 0.15)', text: 'text-emerald-400', border: 'border-emerald-500/30' };
+        return { color: '#a855f7', glow: 'rgba(168, 85, 247, 0.15)', text: 'text-purple-400', border: 'border-purple-500/30' }; // Default
+    };
 
-    // Sort outcomes by probability for the preview
-    const sortedIndices = outcomes.map((_, i) => i).sort((a, b) => outcomes[b] ? (totals[b] - totals[a]) : 0);
-    const topOutcomes = showAllOutcomes ? sortedIndices : sortedIndices.slice(0, 2);
+    const theme = getCategoryTheme(category);
 
     useEffect(() => {
         if (publicKey) {
@@ -111,37 +115,58 @@ export const PredictionCard = ({
         return `${minutes}m`;
     };
 
+    // Derived data
+    const totalVotes = totals.reduce((a, b) => a + b, 0);
+    const outcomeProbabilities = totals.map(t => totalVotes > 0 ? (t / totalVotes) * 100 : 100 / outcomes.length);
+
+    // Sort outcomes by probability for the preview
+    const sortedIndices = outcomes.map((_, i) => i).sort((a, b) => outcomes[b] ? (totals[b] - totals[a]) : 0);
+    const topOutcomes = showAllOutcomes ? sortedIndices : sortedIndices.slice(0, 2);
+
     return (
         <motion.div
             layout
-            className={`glass glass-hover rounded-2xl p-5 flex flex-col gap-4 transition-all duration-300 relative overflow-hidden group ${isHot ? 'border-orange-500/30 shadow-[0_0_20px_rgba(249,115,22,0.1)]' : ''
+            className={`glass rounded-2xl p-5 flex flex-col gap-4 transition-all duration-500 relative overflow-hidden group border-white/5 hover:border-white/10 ${isHot ? 'shadow-[0_0_20px_rgba(249,115,22,0.1)]' : ''
                 }`}
+            style={{
+                boxShadow: `0 0 30px ${theme.glow}`,
+                borderBottom: `1px solid ${theme.color}20`
+            }}
         >
+            {/* Theme Flare */}
+            <div
+                className="absolute top-0 right-0 w-32 h-32 blur-[60px] opacity-20 pointer-events-none transition-opacity duration-500 group-hover:opacity-40"
+                style={{ background: theme.color }}
+            />
+
             {/* Header */}
-            <div className="flex justify-between items-start gap-3">
-                <div className="flex flex-col gap-1">
+            <div className="flex justify-between items-start gap-4 z-10">
+                <div className="flex flex-col gap-1.5 flex-1">
                     <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-bold text-purple-400 uppercase tracking-widest">{category}</span>
-                        {isHot && <span className="text-[10px] font-bold text-orange-500 animate-pulse">🔥 HOT</span>}
+                        <span className={`text-[10px] font-bold uppercase tracking-widest ${theme.text}`}>{category}</span>
+                        {isHot && <span className="text-[10px] font-bold text-orange-500 flex items-center gap-1">
+                            <span className="w-1 h-1 rounded-full bg-orange-500 animate-pulse" />
+                            HOT
+                        </span>}
                     </div>
-                    <h3 className="font-outfit font-bold text-lg leading-tight text-slate-100 group-hover:text-white transition-colors">
+                    <h3 className="font-outfit font-bold text-lg leading-tight text-white group-hover:text-white transition-colors">
                         {question}
                     </h3>
                 </div>
-                <div className="shrink-0 w-12 h-6 opacity-40 group-hover:opacity-100 transition-opacity">
-                    <Sparkline data={getDeterministicPattern(id, outcomeProbabilities[0])} width={48} height={24} color="#a855f7" />
+                <div className="shrink-0 w-14 h-8 opacity-60 group-hover:opacity-100 transition-all duration-500">
+                    <Sparkline data={getDeterministicPattern(id, outcomeProbabilities[0])} width={56} height={32} color={theme.color} />
                 </div>
             </div>
 
             {/* Info Bar */}
-            <div className="flex items-center gap-4 text-[11px] font-medium text-slate-400">
-                <div className="flex items-center gap-1">
-                    <Clock size={12} className="text-purple-500" />
+            <div className="flex items-center gap-4 text-[11px] font-bold text-gray-500 tracking-wide z-10">
+                <div className="flex items-center gap-1.5">
+                    <Clock size={12} className={theme.text} />
                     <span>{timeLeft()}</span>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5">
                     <BarChart3 size={12} className="text-blue-500" />
-                    <span>${totalLiquidity.toLocaleString()} Vol</span>
+                    <span>${totalLiquidity.toLocaleString()} VOL</span>
                 </div>
             </div>
 
@@ -161,24 +186,29 @@ export const PredictionCard = ({
                                 : 'bg-white/5 border-white/5 hover:border-white/20'
                                 } ${resolved && winningOutcome !== idx ? 'opacity-40' : ''}`}
                         >
-                            {/* Progress Bar Background */}
-                            <div
-                                className={`absolute inset-0 opacity-10 transition-all ${votedIndex === idx ? 'bg-purple-500' : 'bg-slate-400'}`}
-                                style={{ width: `${outcomeProbabilities[idx]}%` }}
+                            <div className="absolute inset-0 bg-gray-900/40" />
+
+                            {/* Probability Fill */}
+                            <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${outcomeProbabilities[idx]}%` }}
+                                className="absolute inset-0 opacity-20"
+                                style={{ background: theme.color }}
                             />
 
-                            <div className="relative z-10 flex items-center gap-2">
-                                {resolved && winningOutcome === idx && <Trophy size={14} className="text-amber-400" />}
-                                <span className={`text-sm font-bold ${votedIndex === idx ? 'text-purple-400' : 'text-slate-200'}`}>
-                                    {outcomes[idx]}
-                                </span>
-                            </div>
-
-                            <div className="relative z-10 flex items-center gap-2">
-                                <span className="text-xs font-mono font-bold text-slate-400">
-                                    {outcomeProbabilities[idx].toFixed(0)}%
-                                </span>
-                                <ChevronRight size={14} className="text-slate-600 group-hover/btn:translate-x-1 transition-transform" />
+                            <div className="relative z-10 flex justify-between items-center w-full">
+                                <div className="flex items-center gap-2">
+                                    {resolved && winningOutcome === idx && <Trophy size={14} className="text-amber-400" />}
+                                    <span className={`text-sm font-bold ${votedIndex === idx ? 'text-purple-400' : 'text-slate-200'}`}>
+                                        {outcomes[idx]}
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs font-mono font-bold text-slate-400">
+                                        {outcomeProbabilities[idx].toFixed(0)}%
+                                    </span>
+                                    <ChevronRight size={14} className="text-slate-600 group-hover/btn:translate-x-1 transition-transform" />
+                                </div>
                             </div>
                         </motion.button>
                     ))}
