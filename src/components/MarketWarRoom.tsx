@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, TrendingUp, Users, MessageSquare, ShieldCheck, Share2 } from 'lucide-react';
 import { Sparkline } from './Sparkline';
-import { getPythSparkline } from '@/services/pyth';
+import { getPythSparkline, getPythPrices } from '@/services/pyth';
 import { useState, useEffect } from 'react';
 
 interface MarketWarRoomProps {
@@ -17,7 +17,8 @@ export const MarketWarRoom = ({ isOpen, onClose, market }: MarketWarRoomProps) =
     const [pythData, setPythData] = useState<number[] | null>(null);
 
     // Extraction Logic for "Up/Down" markets
-    const priceTarget = market?.question?.match(/\$(\d{1,3}(,\d{3})*(\.\d+)?)/)?.[0];
+    const priceTarget = market?.question?.match(/\$(\d{1,3}(,\d{3})*(\.\d+)?)/)?.[0] ||
+        market?.question?.match(/(\d{2,3}k)|(\d{5,})/i)?.[0];
 
     // Pyth Integration
     useEffect(() => {
@@ -31,15 +32,21 @@ export const MarketWarRoom = ({ isOpen, onClose, market }: MarketWarRoomProps) =
             else if (q.includes('solana') || q.includes('sol')) symbol = 'SOL';
 
             if (symbol) {
-                const fetchPyth = () => {
-                    getPythSparkline(symbol).then(setPythData);
-                    import('@/services/pyth').then(m => {
-                        m.getPythPrices([symbol]).then(prices => setPythPrice(prices[symbol]));
-                    });
+                const fetchPyth = async () => {
+                    try {
+                        const [sparkline, prices] = await Promise.all([
+                            getPythSparkline(symbol),
+                            getPythPrices([symbol])
+                        ]);
+                        setPythData(sparkline);
+                        if (prices[symbol]) setPythPrice(prices[symbol]);
+                    } catch (e) {
+                        console.error('WarRoom Pyth fetch error:', e);
+                    }
                 };
 
                 fetchPyth();
-                const interval = setInterval(fetchPyth, 10000); // 10s polling
+                const interval = setInterval(fetchPyth, 15000); // 15s polling
                 return () => clearInterval(interval);
             }
         }

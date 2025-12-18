@@ -8,7 +8,7 @@ import { getDeterministicPattern } from '@/utils/chartPatterns';
 import { Sparkline } from './Sparkline';
 import { useToast } from '@/context/ToastContext';
 import { useHaptic } from '@/hooks/useHaptic';
-import { getPythSparkline } from '@/services/pyth';
+import { getPythSparkline, getPythPrices } from '@/services/pyth';
 
 interface PredictionCardProps {
     id: number;
@@ -53,7 +53,9 @@ export const PredictionCard = ({
     const [pythPrice, setPythPrice] = useState<number | null>(null);
 
     // Extraction Logic for "Up/Down" markets
-    const priceTarget = question.match(/\$(\d{1,3}(,\d{3})*(\.\d+)?)/)?.[0];
+    // Look for $ price, then fallback to high numbers (e.g. 96k, 100000)
+    const priceTarget = question.match(/\$(\d{1,3}(,\d{3})*(\.\d+)?)/)?.[0] ||
+        question.match(/(\d{2,3}k)|(\d{5,})/i)?.[0];
 
     // Lifecycle Logic
     const isExpired = Date.now() > endTime * 1000;
@@ -68,15 +70,21 @@ export const PredictionCard = ({
             else if (q.includes('solana') || q.includes('sol')) symbol = 'SOL';
 
             if (symbol) {
-                const fetchPyth = () => {
-                    getPythSparkline(symbol).then(setPythData);
-                    import('@/services/pyth').then(m => {
-                        m.getPythPrices([symbol]).then(prices => setPythPrice(prices[symbol]));
-                    });
+                const fetchPyth = async () => {
+                    try {
+                        const [sparkline, prices] = await Promise.all([
+                            getPythSparkline(symbol),
+                            getPythPrices([symbol])
+                        ]);
+                        setPythData(sparkline);
+                        if (prices[symbol]) setPythPrice(prices[symbol]);
+                    } catch (e) {
+                        console.error('Pyth fetch error:', e);
+                    }
                 };
 
                 fetchPyth();
-                const interval = setInterval(fetchPyth, 10000); // 10s polling
+                const interval = setInterval(fetchPyth, 15000); // 15s polling
                 return () => clearInterval(interval);
             }
         }
