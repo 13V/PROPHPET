@@ -110,27 +110,37 @@ export const MarketWarRoom = ({ isOpen, onClose, market }: MarketWarRoomProps) =
                             <h3 className="text-xl font-black text-white mb-6 uppercase tracking-tight">Place Your Prediction</h3>
 
                             <div className="space-y-4 flex-1">
-                                {market.outcomes?.map((outcome: string, i: number) => (
-                                    <button
-                                        key={outcome}
-                                        className={`w-full group relative overflow-hidden bg-gray-900 border border-white/10 hover:${theme.border.replace('/30', '/50')} p-6 rounded-2xl transition-all text-left`}
-                                    >
-                                        <div
-                                            className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-500"
-                                            style={{ background: `linear-gradient(to r, ${theme.color}10, transparent)` }}
-                                        />
-                                        <div className="relative z-10 flex justify-between items-center">
-                                            <div>
-                                                <p className="text-[10px] font-black text-gray-500 uppercase mb-1">Outcome {i + 1}</p>
-                                                <p className="text-xl font-bold text-white">{outcome}</p>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className={`text-xs font-mono ${theme.text}`}>Wins: 1.85x</p>
-                                                <p className="text-2xl font-black text-white">45%</p>
-                                            </div>
-                                        </div>
-                                    </button>
-                                ))}
+                                {(() => {
+                                    const totals = market.totals || [1, 1];
+                                    const total = totals.reduce((a: number, b: number) => a + b, 0);
+
+                                    return market.outcomes?.map((outcome: string, i: number) => {
+                                        const prob = total > 0 ? (totals[i] / total) * 100 : 50;
+                                        const multiplier = prob > 0 ? (100 / prob).toFixed(2) : '0.00';
+
+                                        return (
+                                            <button
+                                                key={outcome}
+                                                className={`w-full group relative overflow-hidden bg-gray-900 border border-white/10 hover:${theme.border.replace('/30', '/50')} p-6 rounded-2xl transition-all text-left`}
+                                            >
+                                                <div
+                                                    className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-500"
+                                                    style={{ background: `linear-gradient(to r, ${theme.color}10, transparent)` }}
+                                                />
+                                                <div className="relative z-10 flex justify-between items-center">
+                                                    <div>
+                                                        <p className="text-[10px] font-black text-gray-500 uppercase mb-1">Outcome {i + 1}</p>
+                                                        <p className="text-xl font-bold text-white">{outcome}</p>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className={`text-xs font-mono ${theme.text}`}>Wins: {multiplier}x</p>
+                                                        <p className="text-2xl font-black text-white">{prob.toFixed(0)}%</p>
+                                                    </div>
+                                                </div>
+                                            </button>
+                                        );
+                                    });
+                                })()}
                             </div>
 
                             <div className="mt-8 space-y-4">
