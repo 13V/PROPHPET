@@ -1,6 +1,6 @@
 'use client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TrendingUp, TrendingDown, Wallet, Clock, Trophy, ChevronRight, BarChart3 } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, Clock, Trophy, ChevronRight, BarChart3, CheckCircle2 } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { saveVote, getVote } from '@/utils/voteStorage';
@@ -22,6 +22,7 @@ interface PredictionCardProps {
     polymarketId?: string;
     isHot?: boolean;
     onOpenExpanded?: () => void;
+    onSettle?: (id: number) => void;
 }
 
 export const PredictionCard = ({
@@ -36,7 +37,8 @@ export const PredictionCard = ({
     winningOutcome,
     polymarketId,
     isHot,
-    onOpenExpanded
+    onOpenExpanded,
+    onSettle
 }: PredictionCardProps) => {
     const { publicKey, connected } = useWallet();
     const toast = useToast();
@@ -46,6 +48,9 @@ export const PredictionCard = ({
     const [betMode, setBetMode] = useState<number | null>(null);
     const [stakeAmount, setStakeAmount] = useState('');
     const [showAllOutcomes, setShowAllOutcomes] = useState(false);
+
+    // Lifecycle Logic
+    const isExpired = Date.now() > endTime * 1000;
 
     // Dynamic Category Coloring (Professional Themes)
     const getCategoryTheme = (cat: string) => {
@@ -71,12 +76,16 @@ export const PredictionCard = ({
 
     const handleOutcomeClick = (e: React.MouseEvent, index: number) => {
         e.stopPropagation();
+        if (isExpired || resolved) {
+            toast.error('This market is closed');
+            return;
+        }
+
         haptic('selection');
         if (!connected || !publicKey) {
             toast.error('Connect wallet to place a bet');
             return;
         }
-        if (resolved) return;
         setBetMode(index);
     };
 
@@ -90,8 +99,6 @@ export const PredictionCard = ({
         }
 
         haptic('success');
-        // In V2, we'll call the actual Solana program here. 
-        // For now, we update local state to show the "voted" UI.
         saveVote({
             predictionId: id,
             choice: 'multi',
@@ -132,48 +139,65 @@ export const PredictionCard = ({
             layout
             onClick={onOpenExpanded}
             className={`glass rounded-2xl p-5 flex flex-col gap-4 transition-all duration-500 relative overflow-hidden group border-white/5 hover:border-white/10 cursor-pointer ${isHot ? 'shadow-[0_0_20px_rgba(249,115,22,0.1)]' : ''
-                }`}
+                } ${(isExpired && !resolved) ? 'grayscale opacity-80' : ''}`}
             style={{
-                boxShadow: `0 0 30px ${theme.glow}`,
-                borderBottom: `1px solid ${theme.color}20`
+                boxShadow: resolved ? 'none' : `0 0 30px ${theme.glow}`,
+                borderBottom: resolved ? '1px solid rgba(255,255,255,0.05)' : `1px solid ${theme.color}20`
             }}
         >
+            {/* Market Closed Banner */}
+            {isExpired && !resolved && (
+                <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
+                    <div className="rotate-[-10deg] bg-red-500/20 text-red-500 border border-red-500/50 px-8 py-2 font-black text-2xl tracking-[0.3em] backdrop-blur-sm shadow-2xl">
+                        CLOSED
+                    </div>
+                </div>
+            )}
+
             {/* Theme Flare */}
-            <div
-                className="absolute top-0 right-0 w-32 h-32 blur-[60px] opacity-20 pointer-events-none transition-opacity duration-500 group-hover:opacity-40"
-                style={{ background: theme.color }}
-            />
+            {!resolved && (
+                <div
+                    className="absolute top-0 right-0 w-32 h-32 blur-[60px] opacity-20 pointer-events-none transition-opacity duration-500 group-hover:opacity-40"
+                    style={{ background: theme.color }}
+                />
+            )}
 
             {/* Header */}
             <div className="flex justify-between items-start gap-4 z-10">
                 <div className="flex flex-col gap-1.5 flex-1">
                     <div className="flex items-center gap-2">
-                        <span className={`text-[10px] font-bold uppercase tracking-widest ${theme.text}`}>{category}</span>
-                        {isHot && <span className="text-[10px] font-bold text-orange-500 flex items-center gap-1">
+                        <span className={`text-[10px] font-bold uppercase tracking-widest ${resolved ? 'text-gray-500' : theme.text}`}>{category}</span>
+                        {isHot && !resolved && <span className="text-[10px] font-bold text-orange-500 flex items-center gap-1">
                             <span className="w-1 h-1 rounded-full bg-orange-500 animate-pulse" />
                             HOT
                         </span>}
+                        {resolved && <span className="text-[10px] font-bold text-green-500 flex items-center gap-1">
+                            <CheckCircle2 size={10} />
+                            RESOLVED
+                        </span>}
                     </div>
-                    <h3 className="font-outfit font-bold text-lg leading-tight text-white group-hover:text-white transition-colors">
+                    <h3 className={`font-outfit font-bold text-lg leading-tight transition-colors ${resolved ? 'text-gray-400' : 'text-white'}`}>
                         {question}
                     </h3>
                 </div>
                 <div className="shrink-0 w-14 h-8 opacity-60 group-hover:opacity-100 transition-all duration-500">
-                    <Sparkline data={getDeterministicPattern(id, outcomeProbabilities[0])} width={56} height={32} color={theme.color} />
+                    <Sparkline data={getDeterministicPattern(id, outcomeProbabilities[0])} width={56} height={32} color={resolved ? '#4b5563' : theme.color} />
                 </div>
             </div>
 
             {/* Info Bar */}
-            <div className="flex items-center gap-4 text-[11px] font-bold text-gray-500 tracking-wide z-10">
-                <div className="flex items-center gap-1.5">
-                    <Clock size={12} className={theme.text} />
-                    <span>{timeLeft()}</span>
+            {!resolved && (
+                <div className="flex items-center gap-4 text-[11px] font-bold text-gray-500 tracking-wide z-10">
+                    <div className="flex items-center gap-1.5">
+                        <Clock size={12} className={isExpired ? 'text-red-500' : theme.text} />
+                        <span className={isExpired ? 'text-red-500' : ''}>{timeLeft()}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <BarChart3 size={12} className="text-blue-500" />
+                        <span>${totalLiquidity.toLocaleString()} VOL</span>
+                    </div>
                 </div>
-                <div className="flex items-center gap-1.5">
-                    <BarChart3 size={12} className="text-blue-500" />
-                    <span>${totalLiquidity.toLocaleString()} VOL</span>
-                </div>
-            </div>
+            )}
 
             {/* Outcomes */}
             <div className="flex flex-col gap-2 relative">
@@ -186,10 +210,11 @@ export const PredictionCard = ({
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: 10 }}
                             onClick={(e) => handleOutcomeClick(e, idx)}
+                            disabled={isExpired || resolved}
                             className={`w-full group/btn relative h-12 rounded-xl border transition-all flex items-center justify-between px-4 overflow-hidden ${votedIndex === idx
                                 ? 'bg-purple-500/20 border-purple-500/50'
                                 : 'bg-white/5 border-white/5 hover:border-white/20'
-                                } ${resolved && winningOutcome !== idx ? 'opacity-40' : ''}`}
+                                } ${resolved && winningOutcome !== idx ? 'opacity-40' : ''} ${isExpired && !resolved ? 'cursor-not-allowed' : ''}`}
                         >
                             <div className="absolute inset-0 bg-gray-900/40" />
 
@@ -198,7 +223,7 @@ export const PredictionCard = ({
                                 initial={{ width: 0 }}
                                 animate={{ width: `${outcomeProbabilities[idx]}%` }}
                                 className="absolute inset-0 opacity-20"
-                                style={{ background: theme.color }}
+                                style={{ background: resolved ? '#4b5563' : theme.color }}
                             />
 
                             <div className="relative z-10 flex justify-between items-center w-full">
@@ -212,14 +237,14 @@ export const PredictionCard = ({
                                     <span className="text-xs font-mono font-bold text-slate-400">
                                         {outcomeProbabilities[idx].toFixed(0)}%
                                     </span>
-                                    <ChevronRight size={14} className="text-slate-600 group-hover/btn:translate-x-1 transition-transform" />
+                                    {!isExpired && !resolved && <ChevronRight size={14} className="text-slate-600 group-hover/btn:translate-x-1 transition-transform" />}
                                 </div>
                             </div>
                         </motion.button>
                     ))}
                 </AnimatePresence>
 
-                {outcomes.length > 2 && (
+                {outcomes.length > 2 && !resolved && (
                     <button
                         onClick={(e) => { e.stopPropagation(); setShowAllOutcomes(!showAllOutcomes); }}
                         className="text-[10px] font-bold text-slate-500 hover:text-slate-300 transition-colors py-1 self-center"
@@ -228,6 +253,20 @@ export const PredictionCard = ({
                     </button>
                 )}
             </div>
+
+            {/* Settle Market Button */}
+            {isExpired && !resolved && (
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        haptic('success');
+                        onSettle?.(id);
+                    }}
+                    className="w-full py-4 bg-white text-black font-black text-xs uppercase tracking-widest rounded-xl hover:bg-gray-200 transition-all shadow-xl z-30"
+                >
+                    SETTLE MARKET & MOVE TO RESOLVED
+                </button>
+            )}
 
             {/* Bet Modal Overlay */}
             <AnimatePresence>

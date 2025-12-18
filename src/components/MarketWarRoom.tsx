@@ -25,6 +25,8 @@ export const MarketWarRoom = ({ isOpen, onClose, market }: MarketWarRoomProps) =
     };
 
     const theme = getCategoryTheme(market.category || '');
+    const isExpired = Date.now() > (market.endTime * 1000);
+    const resolved = market.resolved;
 
     return (
         <AnimatePresence>
@@ -43,7 +45,7 @@ export const MarketWarRoom = ({ isOpen, onClose, market }: MarketWarRoomProps) =
                         initial={{ scale: 0.9, y: 20, opacity: 0 }}
                         animate={{ scale: 1, y: 0, opacity: 1 }}
                         exit={{ scale: 0.9, y: 20, opacity: 0 }}
-                        className="relative w-full max-w-6xl h-full max-h-[90vh] bg-gray-950 border border-white/10 rounded-[2rem] overflow-hidden flex flex-col md:flex-row shadow-2xl"
+                        className={`relative w-full max-w-6xl h-full max-h-[90vh] bg-gray-950 border border-white/10 rounded-[2rem] overflow-hidden flex flex-col md:flex-row shadow-2xl ${isExpired && !resolved ? 'grayscale' : ''}`}
                     >
                         {/* Close Button */}
                         <button
@@ -60,6 +62,11 @@ export const MarketWarRoom = ({ isOpen, onClose, market }: MarketWarRoomProps) =
                                     {market.category}
                                 </span>
                                 <span className="text-gray-500 text-xs font-mono">Market ID: #{market.id}</span>
+                                {isExpired && !resolved && (
+                                    <span className="bg-red-500/20 text-red-500 text-[10px] font-black px-3 py-1 rounded-full border border-red-500/30 uppercase tracking-widest">
+                                        ENDED
+                                    </span>
+                                )}
                             </div>
 
                             <h1 className="text-3xl md:text-5xl font-black text-white leading-tight mb-8">
@@ -78,10 +85,10 @@ export const MarketWarRoom = ({ isOpen, onClose, market }: MarketWarRoomProps) =
                                             <p className="text-[10px] font-black text-gray-500 uppercase tracking-tighter">Current Odds</p>
                                             <p className="text-4xl font-black text-white">74% <span className="text-sm text-green-400 ml-2">↑ 4.2%</span></p>
                                         </div>
-                                        <TrendingUp style={{ color: theme.color }} size={32} />
+                                        <TrendingUp style={{ color: resolved ? '#4b5563' : theme.color }} size={32} />
                                     </div>
                                     <div className="h-48 w-full">
-                                        <Sparkline data={market.sparklineData || [30, 40, 35, 50, 45, 60, 55, 74]} width={800} height={120} color={theme.color} />
+                                        <Sparkline data={market.sparklineData || [30, 40, 35, 50, 45, 60, 55, 74]} width={800} height={120} color={resolved ? '#4b5563' : theme.color} />
                                     </div>
                                 </div>
                             </div>
@@ -92,7 +99,7 @@ export const MarketWarRoom = ({ isOpen, onClose, market }: MarketWarRoomProps) =
                                     { label: 'Total Volume', value: market.totalVolume ? `$${market.totalVolume.toLocaleString()}` : '$0', icon: TrendingUp },
                                     { label: 'Liquidity', value: '$124.5k', icon: ShieldCheck },
                                     { label: 'Traders', value: '1,245', icon: Users },
-                                    { label: 'Sentiment', value: 'Bullish', icon: MessageSquare }
+                                    { label: 'Sentiment', value: isExpired ? 'Closed' : 'Bullish', icon: MessageSquare }
                                 ].map((stat, i) => (
                                     <div key={i} className="bg-white/5 border border-white/5 p-4 rounded-2xl">
                                         <div className="flex items-center gap-2 mb-2 text-gray-500">
@@ -107,7 +114,9 @@ export const MarketWarRoom = ({ isOpen, onClose, market }: MarketWarRoomProps) =
 
                         {/* Right Side: Betting Panel */}
                         <div className="w-full md:w-[400px] bg-white/5 border-l border-white/5 p-8 flex flex-col">
-                            <h3 className="text-xl font-black text-white mb-6 uppercase tracking-tight">Place Your Prediction</h3>
+                            <h3 className="text-xl font-black text-white mb-6 uppercase tracking-tight">
+                                {isExpired ? 'Market Has Ended' : 'Place Your Prediction'}
+                            </h3>
 
                             <div className="space-y-4 flex-1">
                                 {(() => {
@@ -121,11 +130,12 @@ export const MarketWarRoom = ({ isOpen, onClose, market }: MarketWarRoomProps) =
                                         return (
                                             <button
                                                 key={outcome}
-                                                className={`w-full group relative overflow-hidden bg-gray-900 border border-white/10 hover:${theme.border.replace('/30', '/50')} p-6 rounded-2xl transition-all text-left`}
+                                                disabled={isExpired || resolved}
+                                                className={`w-full group relative overflow-hidden bg-gray-900 border border-white/10 ${isExpired ? 'cursor-not-allowed opacity-60' : `hover:${theme.border.replace('/30', '/50')}`} p-6 rounded-2xl transition-all text-left`}
                                             >
                                                 <div
                                                     className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-500"
-                                                    style={{ background: `linear-gradient(to r, ${theme.color}10, transparent)` }}
+                                                    style={{ background: isExpired ? 'none' : `linear-gradient(to r, ${theme.color}10, transparent)` }}
                                                 />
                                                 <div className="relative z-10 flex justify-between items-center">
                                                     <div>
@@ -133,7 +143,7 @@ export const MarketWarRoom = ({ isOpen, onClose, market }: MarketWarRoomProps) =
                                                         <p className="text-xl font-bold text-white">{outcome}</p>
                                                     </div>
                                                     <div className="text-right">
-                                                        <p className={`text-xs font-mono ${theme.text}`}>Wins: {multiplier}x</p>
+                                                        <p className={`text-xs font-mono ${resolved ? 'text-gray-500' : theme.text}`}>Wins: {multiplier}x</p>
                                                         <p className="text-2xl font-black text-white">{prob.toFixed(0)}%</p>
                                                     </div>
                                                 </div>
@@ -144,18 +154,36 @@ export const MarketWarRoom = ({ isOpen, onClose, market }: MarketWarRoomProps) =
                             </div>
 
                             <div className="mt-8 space-y-4">
-                                <div
-                                    className="p-4 rounded-xl border text-[11px]"
-                                    style={{ backgroundColor: `${theme.color}10`, borderColor: `${theme.color}20`, color: theme.color }}
-                                >
-                                    ⚠️ Prediction markets involve capital risk. Always verify the resolving oracle before placing big bites.
-                                </div>
-                                <button
-                                    className="w-full py-4 text-white font-black text-sm uppercase tracking-[0.2em] rounded-2xl shadow-lg transition-all"
-                                    style={{ backgroundColor: theme.color, boxShadow: `0 10px 20px ${theme.color}20` }}
-                                >
-                                    Approve $PROPHET
-                                </button>
+                                {isExpired ? (
+                                    <div className="p-6 rounded-2xl bg-white/5 border border-white/10 text-center">
+                                        <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-2">Market Status</p>
+                                        <p className="text-white text-sm font-black">AWAITING FINAL ORACLE SIGNATURE</p>
+                                        <div className="mt-4 flex justify-center">
+                                            <div className="w-12 h-1 bg-gray-800 rounded-full overflow-hidden">
+                                                <motion.div
+                                                    animate={{ x: [-48, 48] }}
+                                                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                                                    className="w-1/2 h-full bg-purple-500"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div
+                                            className="p-4 rounded-xl border text-[11px]"
+                                            style={{ backgroundColor: `${theme.color}10`, borderColor: `${theme.color}20`, color: theme.color }}
+                                        >
+                                            ⚠️ Prediction markets involve capital risk. Always verify the resolving oracle before placing big bites.
+                                        </div>
+                                        <button
+                                            className="w-full py-4 text-white font-black text-sm uppercase tracking-[0.2em] rounded-2xl shadow-lg transition-all"
+                                            style={{ backgroundColor: theme.color, boxShadow: `0 10px 20px ${theme.color}20` }}
+                                        >
+                                            Approve $PROPHET
+                                        </button>
+                                    </>
+                                )}
                                 <button className="w-full py-2 flex items-center justify-center gap-2 text-gray-500 hover:text-white transition-colors text-xs">
                                     <Share2 size={14} /> Share this market
                                 </button>

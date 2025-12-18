@@ -45,6 +45,15 @@ export default function Home() {
     setIsWarRoomOpen(true);
   };
 
+  const handleSettle = (id: number) => {
+    setPredictions(prev => prev.map(p => {
+      if (p.id === id) {
+        return { ...p, resolved: true, winningOutcome: 0 };
+      }
+      return p;
+    }));
+  };
+
   useEffect(() => {
     async function loadBackgroundData() {
       try {
@@ -211,6 +220,7 @@ export default function Home() {
                       key={p.id}
                       {...p}
                       onOpenExpanded={() => openWarRoom(p)}
+                      onSettle={handleSettle}
                     />
                   ))}
                 </div>
@@ -225,6 +235,7 @@ export default function Home() {
                         key={p.id}
                         {...p}
                         onOpenExpanded={() => openWarRoom(p)}
+                        onSettle={handleSettle}
                       />
                     ))}
                   </div>
@@ -238,6 +249,7 @@ export default function Home() {
                         key={p.id}
                         {...p}
                         onOpenExpanded={() => openWarRoom(p)}
+                        onSettle={handleSettle}
                       />
                     ))}
                   </div>
@@ -251,6 +263,7 @@ export default function Home() {
                         key={p.id}
                         {...p}
                         onOpenExpanded={() => openWarRoom(p)}
+                        onSettle={handleSettle}
                       />
                     ))}
                   </div>

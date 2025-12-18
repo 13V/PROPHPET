@@ -81,6 +81,9 @@ export const FeaturedMarket = ({ data, onOpenCreateModal, onOpenExpanded }: Feat
 
     const theme = getCategoryTheme(data?.category || 'crypto');
 
+    // Lifecycle Logic
+    const isExpired = data?.timeLeft === 'Ended' || (data?.id === 953233);
+
     // Determine Yes % (default 50 if no data or 0 votes)
     const totalVotes = data ? (data.yesVotes + data.noVotes) : 0;
     const yesPercentage = totalVotes > 0 ? ((data!.yesVotes / totalVotes) * 100) : 50;
@@ -108,10 +111,17 @@ export const FeaturedMarket = ({ data, onOpenCreateModal, onOpenExpanded }: Feat
 
                     {/* Floating Badge */}
                     <div className="absolute top-5 right-5 md:top-10 md:right-10 flex items-center gap-3">
-                        <div className="flex items-center gap-2 px-2 py-1 md:px-3 md:py-1.5 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] md:text-xs font-bold animate-pulse">
-                            <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                            LIVE
-                        </div>
+                        {isExpired ? (
+                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-500/10 border border-gray-500/20 text-gray-400 text-xs font-bold uppercase tracking-widest">
+                                <span className="w-1.5 h-1.5 rounded-full bg-gray-600" />
+                                MARKET ENDED
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-2 px-2 py-1 md:px-3 md:py-1.5 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] md:text-xs font-bold animate-pulse">
+                                <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                                LIVE
+                            </div>
+                        )}
                     </div>
 
                     <div className="z-10 mt-8 md:mt-0">
@@ -227,8 +237,9 @@ export const FeaturedMarket = ({ data, onOpenCreateModal, onOpenExpanded }: Feat
                             ) : (
                                 <div className="grid grid-cols-2 gap-3 md:gap-4">
                                     <button
+                                        disabled={isExpired}
                                         onClick={(e) => { e.stopPropagation(); connected ? setBetMode('yes') : alert('Connect Wallet!'); }}
-                                        className="group relative overflow-hidden p-4 md:p-6 bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 hover:border-green-500/50 rounded-2xl transition-all duration-300 active:scale-95"
+                                        className={`group relative overflow-hidden p-4 md:p-6 bg-green-500/10 ${isExpired ? 'cursor-not-allowed opacity-40' : 'hover:bg-green-500/20 border-green-500/20 hover:border-green-500/50'} rounded-2xl transition-all duration-300 active:scale-95`}
                                     >
                                         <div className="relative z-10 flex flex-col items-center gap-1">
                                             <span className="text-green-400 font-black text-xl md:text-2xl tracking-tight">YES</span>
@@ -238,8 +249,9 @@ export const FeaturedMarket = ({ data, onOpenCreateModal, onOpenExpanded }: Feat
                                     </button>
 
                                     <button
+                                        disabled={isExpired}
                                         onClick={(e) => { e.stopPropagation(); connected ? setBetMode('no') : alert('Connect Wallet!'); }}
-                                        className="group relative overflow-hidden p-4 md:p-6 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/50 rounded-2xl transition-all duration-300 active:scale-95"
+                                        className={`group relative overflow-hidden p-4 md:p-6 bg-red-500/10 ${isExpired ? 'cursor-not-allowed opacity-40' : 'hover:bg-red-500/20 border-red-500/20 hover:border-red-500/50'} rounded-2xl transition-all duration-300 active:scale-95`}
                                     >
                                         <div className="relative z-10 flex flex-col items-center gap-1">
                                             <span className="text-red-400 font-black text-xl md:text-2xl tracking-tight">NO</span>
