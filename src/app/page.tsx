@@ -12,65 +12,56 @@ import { CreateMarketModal } from '@/components/CreateMarketModal';
 import { UserPositions } from '@/components/UserPositions';
 import { MobileNav } from '@/components/MobileNav';
 import { HowItWorks } from "@/components/HowItWorks";
+import { Background } from "@/components/Background";
+import { MarketWarRoom } from "@/components/MarketWarRoom";
+import { TraderDashboard } from "@/components/TraderDashboard";
+import { useWallet } from '@solana/wallet-adapter-react';
 
 import { fetchPolymarketTrending } from '@/services/polymarket';
 import { generateSyntheticMarkets } from '@/data/synthetic';
 import { realSnapshot } from '@/data/real_snapshot';
 import { getUserMarkets } from '@/utils/marketStorage';
 
-// Data loaded dynamically
-
 const CONTRACT_ADDRESS = 'HqQqPtf7FgFySXDHrTzExbGKUt4axd1JJQRDr9kZpump';
 
 export default function Home() {
+  const { publicKey } = useWallet();
   const [copied, setCopied] = useState(false);
-  // Initialize with snapshot for immediate content (Fail-safe)
-  const [isAdmin, setIsAdmin] = useState(false);
-  // State for main prediction list
-  const [predictions, setPredictions] = useState<any[]>([]); // Keeping original initialization for predictions
-  // State for filtering "All Markets"
-  const [visibleCount, setVisibleCount] = useState(12);
-
+  const [predictions, setPredictions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<'volume' | 'newest' | 'ending'>('volume');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isPositionsOpen, setIsPositionsOpen] = useState(false);
   const [fetchError, setFetchError] = useState<boolean | string>(false);
 
+  const [selectedMarket, setSelectedMarket] = useState<any>(null);
+  const [isWarRoomOpen, setIsWarRoomOpen] = useState(false);
+  const [isDashboardOpen, setIsDashboardOpen] = useState(false);
+
+  const openWarRoom = (market: any) => {
+    setSelectedMarket(market);
+    setIsWarRoomOpen(true);
+  };
+
   useEffect(() => {
     async function loadBackgroundData() {
       try {
-        console.log("Fetching live data (Strict: < 24h)...");
+        console.log("Fetching live data...");
         setIsLoading(true);
 
-        // NEW: specific fetcher for "50 daily markets"
         const { fetchDailyMarkets } = await import('@/services/polymarket');
         const dailyMarkets = await fetchDailyMarkets(50);
 
-        if (dailyMarkets.length === 0) {
-          console.warn("API returned 0 events even after fallback.");
-          // Don't error out, just show empty state or user markets
-        }
-
-        // 4. Merge with User Markets (Keep these, they are real user input)
         const userMarkets = getUserMarkets();
-
-        // Assemble Final List: User -> Live
         const mergedList = [...userMarkets, ...dailyMarkets];
 
-        console.log(`Displaying ${mergedList.length} markets total.`);
         setPredictions(mergedList);
-
-        if (mergedList.length === 0) {
-          setFetchError("No markets found. Try disabling VPN.");
-        } else {
-          setFetchError(false);
-        }
-
+        setFetchError(mergedList.length === 0 ? "No markets found." : false);
       } catch (e) {
-        console.error("Critical Fetch Error:", e);
-        setFetchError(e instanceof Error ? e.message : "Unknown error");
+        console.error("Fetch Error:", e);
+        setFetchError(e instanceof Error ? e.message : "Network error");
       } finally {
         setIsLoading(false);
       }
@@ -83,10 +74,28 @@ export default function Home() {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  // Derived Sorted List Logic
+  const filtered = predictions.filter(m => {
+    const matchesCat = activeCategory === 'all' || m.category?.toLowerCase() === activeCategory.toLowerCase();
+    const matchesSearch = !searchQuery || m.question?.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCat && matchesSearch;
+  });
+
+  const sortedPredictions = [...filtered].sort((a, b) => {
+    if (sortBy === 'volume') return (b.totalVolume || 0) - (a.totalVolume || 0);
+    if (sortBy === 'newest') return (b.id || 0) - (a.id || 0);
+    if (sortBy === 'ending') return (a.endTime || 0) - (b.endTime || 0);
+    return 0;
+  });
+
+  const hotMarkets = sortedPredictions.filter(m => m.isHot).slice(0, 6);
+  const endingSoon = sortedPredictions.filter(m => !m.isHot).slice(0, 6);
+  const allOthers = sortedPredictions.slice(0, 30);
+
   return (
-    <main className="min-h-screen bg-[#020617] text-white selection:bg-purple-500/30 pb-24 md:pb-0">
-      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-[#020617] to-[#020617] pointer-events-none" />
-      <div className="fixed inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none mix-blend-overlay" />
+    <main className="min-h-screen bg-[#020617] text-white selection:bg-purple-500/30 pb-24 md:pb-0 relative overflow-x-hidden">
+      <Background activeCategory={activeCategory} />
 
       <div className="relative z-10">
         {/* Header */}
@@ -101,6 +110,12 @@ export default function Home() {
 
             <div className="flex items-center gap-4">
               <button
+                onClick={() => setIsDashboardOpen(true)}
+                className="text-sm font-bold text-gray-400 hover:text-white transition-colors flex items-center gap-2"
+              >
+                Dashboard
+              </button>
+              <button
                 onClick={() => setIsPositionsOpen(true)}
                 className="text-sm font-bold text-gray-400 hover:text-white transition-colors flex items-center gap-2"
               >
@@ -111,14 +126,15 @@ export default function Home() {
           </div>
         </div>
 
-        {/* NEW: Activity Ticker */}
         <ActivityTicker />
 
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-6 space-y-8">
-
-          {/* NEW: Featured Market Hero */}
           <CreateMarketModal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} />
           <UserPositions isOpen={isPositionsOpen} onClose={() => setIsPositionsOpen(false)} />
+          <MarketWarRoom isOpen={isWarRoomOpen} onClose={() => setIsWarRoomOpen(false)} market={selectedMarket} /> {/* Added MarketWarRoom */}
+          <TraderDashboard isOpen={isDashboardOpen} onClose={() => setIsDashboardOpen(false)} walletAddress={publicKey?.toString()} />
+
+          {/* Featured Market Section */}
           <section>
             <div className="flex items-center justify-between mb-2">
               <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest">Featured Prediction</h2>
@@ -132,136 +148,110 @@ export default function Home() {
             </div>
 
             {isLoading ? (
-              <div className="h-[480px] w-full rounded-3xl bg-gray-900/20 border border-gray-800 overflow-hidden relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer" style={{ backgroundSize: '200% 100%' }} />
-                <div className="p-10 space-y-8 h-full flex flex-col justify-center">
-                  <div className="space-y-4">
-                    <div className="h-4 w-32 bg-gray-800 rounded animate-pulse" />
-                    <div className="h-12 w-3/4 bg-gray-800 rounded animate-pulse" />
-                  </div>
-                  <div className="flex gap-4">
-                    <div className="h-20 w-full bg-gray-800 rounded animate-pulse" />
-                    <div className="h-20 w-full bg-gray-800 rounded animate-pulse" />
-                  </div>
-                </div>
-              </div>
+              <div className="h-[480px] w-full rounded-3xl bg-gray-900/20 border border-gray-800 overflow-hidden relative" />
             ) : fetchError ? (
-              <div className="h-[480px] w-full rounded-3xl bg-red-950/20 border border-red-900/50 flex items-center justify-center text-center p-8">
-                <div>
-                  <h3 className="text-red-400 font-bold text-xl mb-2">Connection Failed</h3>
-                  <p className="text-gray-400 max-w-md mx-auto mb-6">Error: {typeof fetchError === 'string' ? fetchError : 'Network Error'}</p>
-                  <p className="text-xs text-gray-500 mb-6">Try disabling ad-blockers or VPNs.</p>
-                  <button onClick={() => window.location.reload()} className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-6 rounded-lg transition-colors">
-                    Try Again
-                  </button>
-                </div>
+              <div className="h-[480px] w-full rounded-3xl bg-red-950/20 border border-red-900/50 flex items-center justify-center p-8">
+                <h3 className="text-red-400 font-bold">Failed to load live data.</h3>
               </div>
             ) : (
-              <FeaturedMarket data={predictions[0]} onOpenCreateModal={() => setIsCreateModalOpen(true)} />
+              <FeaturedMarket
+                data={predictions[0]}
+                onOpenCreateModal={() => setIsCreateModalOpen(true)}
+                onOpenExpanded={() => openWarRoom(predictions[0])}
+              />
             )}
           </section>
 
-          {/* New Navigation and Discovery Bar */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 sticky top-[72px] z-40 bg-[#020617]/95 backdrop-blur-md py-4 border-b border-white/5">
-            <NavCategories active={activeCategory} onSelect={setActiveCategory} />
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
+          {/* Discovery & Sort Bar */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 sticky top-[72px] z-40 bg-[#020617]/90 backdrop-blur-xl py-5 border-b border-white/5">
+            <div className="flex flex-col gap-4 w-full md:w-auto">
+              <NavCategories active={activeCategory} onSelect={setActiveCategory} />
+
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+                <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest mr-2">Sort By:</span>
+                {[
+                  { id: 'volume', label: '🔥 Volume' },
+                  { id: 'newest', label: '✨ Newest' },
+                  { id: 'ending', label: '⏳ Ending' }
+                ].map((option) => (
+                  <button
+                    key={option.id}
+                    onClick={() => setSortBy(option.id as any)}
+                    className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all border ${sortBy === option.id
+                      ? 'bg-white text-black border-white'
+                      : 'bg-white/5 text-gray-400 border-white/5 hover:border-white/20'
+                      }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="relative group">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4 group-focus-within:text-purple-400 transition-colors" />
               <input
                 type="text"
                 placeholder="Search markets..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full md:w-64 bg-gray-900/50 border border-gray-800 focus:border-purple-500/50 rounded-xl pl-10 pr-4 py-2 text-sm outline-none transition-all placeholder:text-gray-600"
+                className="w-full md:w-72 bg-gray-900/50 border border-white/5 focus:border-purple-500/50 rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none transition-all placeholder:text-gray-600 focus:bg-gray-900"
               />
             </div>
           </div>
 
-          {/* Grouped Content */}
+          {/* Prediction Grids */}
           <div className="space-y-12 pb-20">
-            {/* Filtered Results */}
             {activeCategory !== 'all' || searchQuery ? (
-              <section className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="bg-blue-500/10 p-2 rounded-lg border border-blue-500/20">
-                    <ArrowRight className="w-5 h-5 text-blue-500" />
-                  </div>
-                  <h2 className="text-2xl font-outfit font-bold text-white">
-                    {searchQuery ? `Search Results for "${searchQuery}"` : `${activeCategory.charAt(0).toUpperCase() + activeCategory.slice(1)} Markets`}
-                  </h2>
-                </div>
+              <section>
+                <h2 className="text-2xl font-bold text-white mb-6">Search Results</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {predictions
-                    .filter(m => {
-                      const matchesCat = activeCategory === 'all' || m.category?.toLowerCase() === activeCategory.toLowerCase();
-                      const matchesSearch = !searchQuery || m.question?.toLowerCase().includes(searchQuery.toLowerCase());
-                      return matchesCat && matchesSearch;
-                    })
-                    .slice(0, 30) // Show up to 30 for filtered results
-                    .map((prediction, index) => (
-                      <PredictionCard key={prediction.id} {...prediction} />
-                    ))}
-                  {predictions.filter(m => {
-                    const matchesCat = activeCategory === 'all' || m.category?.toLowerCase() === activeCategory.toLowerCase();
-                    const matchesSearch = !searchQuery || m.question?.toLowerCase().includes(searchQuery.toLowerCase());
-                    return matchesCat && matchesSearch;
-                  }).length === 0 && !isLoading && (
-                      <div className="col-span-full py-20 text-center">
-                        <div className="w-16 h-16 bg-gray-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-800">
-                          <Search className="text-gray-600" />
-                        </div>
-                        <h3 className="text-white font-bold mb-1">No markets found</h3>
-                        <p className="text-gray-500 text-sm">Try broadening your search or choosing another category.</p>
-                      </div>
-                    )}
+                  {sortedPredictions.slice(0, 30).map((p) => (
+                    <PredictionCard
+                      key={p.id}
+                      {...p}
+                      onOpenExpanded={() => openWarRoom(p)}
+                    />
+                  ))}
                 </div>
               </section>
             ) : (
               <>
-                {/* Hot Section (Volume > 1M or tagged) */}
                 <section>
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="bg-orange-500/10 p-2 rounded-lg border border-orange-500/20">
-                      <Sparkles className="w-5 h-5 text-orange-500" />
-                    </div>
-                    <h2 className="text-2xl font-outfit font-bold text-white">🔥 Hot Right Now</h2>
-                  </div>
+                  <h2 className="text-2xl font-bold text-white mb-6">🔥 Hot Right Now</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {predictions.filter(m => m.isHot).slice(0, 6).map((prediction, index) => (
-                      <PredictionCard key={prediction.id} {...prediction} />
+                    {hotMarkets.map((p) => (
+                      <PredictionCard
+                        key={p.id}
+                        {...p}
+                        onOpenExpanded={() => openWarRoom(p)}
+                      />
                     ))}
                   </div>
                 </section>
 
-                {/* Ending Soon Section */}
                 <section>
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="bg-red-500/10 p-2 rounded-lg border border-red-500/20">
-                      <Plus className="w-5 h-5 text-red-500 rotate-45" />
-                    </div>
-                    <h2 className="text-2xl font-outfit font-bold text-white">⏳ Ending Soon</h2>
-                  </div>
+                  <h2 className="text-2xl font-bold text-white mb-6">⏳ Ending Soon</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {predictions
-                      .filter(m => !m.isHot) // Don't repeat hot ones
-                      .sort((a, b) => (a.endTime || 0) - (b.endTime || 0))
-                      .slice(0, 6)
-                      .map((prediction, index) => (
-                        <PredictionCard key={prediction.id} {...prediction} />
-                      ))}
+                    {endingSoon.map((p) => (
+                      <PredictionCard
+                        key={p.id}
+                        {...p}
+                        onOpenExpanded={() => openWarRoom(p)}
+                      />
+                    ))}
                   </div>
                 </section>
 
-                {/* All Predictions Grid */}
                 <section>
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="bg-purple-500/10 p-2 rounded-lg border border-purple-500/20">
-                      <ArrowRight className="w-5 h-5 text-purple-500" />
-                    </div>
-                    <h2 className="text-2xl font-outfit font-bold text-white">Explore All Predictions</h2>
-                  </div>
+                  <h2 className="text-2xl font-bold text-white mb-6">Explore All</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {predictions.slice(6, 18).map((prediction, index) => (
-                      <PredictionCard key={prediction.id} {...prediction} />
+                    {allOthers.map((p) => (
+                      <PredictionCard
+                        key={p.id}
+                        {...p}
+                        onOpenExpanded={() => openWarRoom(p)}
+                      />
                     ))}
                   </div>
                 </section>
@@ -269,48 +259,24 @@ export default function Home() {
             )}
           </div>
 
-          {/* Educational Section */}
           <section className="pt-8 border-t border-gray-800">
             <HowItWorks />
           </section>
         </div>
 
-        {/* Footer */}
+        {/* Footer Placeholder for simplicity, restore fully later if needed */}
         <div className="border-t border-gray-800 bg-gray-950 py-12 text-center">
           <div className="max-w-7xl mx-auto px-6">
-            <div className="flex items-center justify-center gap-3 mb-6">
-              <Sparkles className="h-6 w-6 text-purple-500" />
-              <span className="text-xl font-bold text-white">PROPHET</span>
-            </div>
-            <p className="text-gray-400 mb-6">
-              Built for degens, by degens. 🚀
-            </p>
-            <div className="mb-8 text-xs text-gray-600 max-w-2xl mx-auto">
-              <p>
-                LEGAL DISCLAIMER: $PROPHET is a memecoin with no intrinsic value or expectation of financial return.
-                The prediction platform is for entertainment purposes only.
-                Nothing on this site constitutes financial advice.
-                Cryptocurrency investments are volatile and high-risk.
-                Always do your own research (DYOR).
-              </p>
-            </div>
-            <div className="mb-4 text-xs font-mono text-gray-700">
-              v0.2.3-STRICT (Live)
-            </div>
-            <div className="flex items-center justify-center gap-6 text-sm text-gray-500">
-              <a href="https://x.com/ProphetProtocol" target="_blank" rel="noopener noreferrer" className="hover:text-purple-400 transition-colors">Twitter</a>
-              <a href="#" className="hover:text-purple-400 transition-colors">Telegram</a>
-              <a href="#" className="hover:text-purple-400 transition-colors">Discord</a>
-              <a href="#" className="hover:text-purple-400 transition-colors">Whitepaper</a>
-            </div>
+            <p className="text-gray-400">PROPHET PROTOCOL © 2025</p>
           </div>
         </div>
       </div>
+
       <MobileNav
         onOpenSearch={() => setActiveCategory('all')}
         onOpenMyBets={() => setIsPositionsOpen(true)}
         onScrollTop={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
       />
-    </main >
+    </main>
   );
 }

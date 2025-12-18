@@ -22,9 +22,10 @@ interface FeaturedMarketProps {
         outcomeLabels?: string[];
     };
     onOpenCreateModal?: () => void;
+    onOpenExpanded?: () => void;
 }
 
-export const FeaturedMarket = ({ data, onOpenCreateModal }: FeaturedMarketProps) => {
+export const FeaturedMarket = ({ data, onOpenCreateModal, onOpenExpanded }: FeaturedMarketProps) => {
     const { publicKey, connected, wallet } = useWallet();
     const toast = useToast();
     const { showBetSuccess } = useBetSuccess();
@@ -89,7 +90,10 @@ export const FeaturedMarket = ({ data, onOpenCreateModal }: FeaturedMarketProps)
     const bigChartData = [45, 48, 47, 52, 55, 58, 54, 59, 62, 65, 63, 68, 72, 75, 74, 80, 82, 85];
 
     return (
-        <div className="relative group rounded-3xl overflow-hidden border border-white/5 shadow-2xl bg-gray-950">
+        <div
+            onClick={onOpenExpanded}
+            className="relative group rounded-3xl overflow-hidden border border-white/5 shadow-2xl bg-gray-950 cursor-pointer"
+        >
             {/* Cinematic Background Gradient */}
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-purple-900/20 via-gray-900/0 to-gray-950/0" />
             <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-purple-600/10 blur-[150px] rounded-full pointer-events-none mix-blend-screen" />
@@ -222,7 +226,7 @@ export const FeaturedMarket = ({ data, onOpenCreateModal }: FeaturedMarketProps)
                             ) : (
                                 <div className="grid grid-cols-2 gap-3 md:gap-4">
                                     <button
-                                        onClick={() => connected ? setBetMode('yes') : alert('Connect Wallet!')}
+                                        onClick={(e) => { e.stopPropagation(); connected ? setBetMode('yes') : alert('Connect Wallet!'); }}
                                         className="group relative overflow-hidden p-4 md:p-6 bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 hover:border-green-500/50 rounded-2xl transition-all duration-300 active:scale-95"
                                     >
                                         <div className="relative z-10 flex flex-col items-center gap-1">
@@ -233,7 +237,7 @@ export const FeaturedMarket = ({ data, onOpenCreateModal }: FeaturedMarketProps)
                                     </button>
 
                                     <button
-                                        onClick={() => connected ? setBetMode('no') : alert('Connect Wallet!')}
+                                        onClick={(e) => { e.stopPropagation(); connected ? setBetMode('no') : alert('Connect Wallet!'); }}
                                         className="group relative overflow-hidden p-4 md:p-6 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/50 rounded-2xl transition-all duration-300 active:scale-95"
                                     >
                                         <div className="relative z-10 flex flex-col items-center gap-1">

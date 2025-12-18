@@ -21,6 +21,7 @@ interface PredictionCardProps {
     winningOutcome?: number;
     polymarketId?: string;
     isHot?: boolean;
+    onOpenExpanded?: () => void;
 }
 
 export const PredictionCard = ({
@@ -34,7 +35,8 @@ export const PredictionCard = ({
     resolved,
     winningOutcome,
     polymarketId,
-    isHot
+    isHot,
+    onOpenExpanded
 }: PredictionCardProps) => {
     const { publicKey, connected } = useWallet();
     const toast = useToast();
@@ -66,7 +68,8 @@ export const PredictionCard = ({
         }
     }, [publicKey, id]);
 
-    const handleOutcomeClick = (index: number) => {
+    const handleOutcomeClick = (e: React.MouseEvent, index: number) => {
+        e.stopPropagation();
         haptic('selection');
         if (!connected || !publicKey) {
             toast.error('Connect wallet to place a bet');
@@ -126,7 +129,8 @@ export const PredictionCard = ({
     return (
         <motion.div
             layout
-            className={`glass rounded-2xl p-5 flex flex-col gap-4 transition-all duration-500 relative overflow-hidden group border-white/5 hover:border-white/10 ${isHot ? 'shadow-[0_0_20px_rgba(249,115,22,0.1)]' : ''
+            onClick={onOpenExpanded}
+            className={`glass rounded-2xl p-5 flex flex-col gap-4 transition-all duration-500 relative overflow-hidden group border-white/5 hover:border-white/10 cursor-pointer ${isHot ? 'shadow-[0_0_20px_rgba(249,115,22,0.1)]' : ''
                 }`}
             style={{
                 boxShadow: `0 0 30px ${theme.glow}`,
@@ -180,7 +184,7 @@ export const PredictionCard = ({
                             initial={{ opacity: 0, x: -10 }}
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: 10 }}
-                            onClick={() => handleOutcomeClick(idx)}
+                            onClick={(e) => handleOutcomeClick(e, idx)}
                             className={`w-full group/btn relative h-12 rounded-xl border transition-all flex items-center justify-between px-4 overflow-hidden ${votedIndex === idx
                                 ? 'bg-purple-500/20 border-purple-500/50'
                                 : 'bg-white/5 border-white/5 hover:border-white/20'
@@ -216,7 +220,7 @@ export const PredictionCard = ({
 
                 {outcomes.length > 2 && (
                     <button
-                        onClick={() => setShowAllOutcomes(!showAllOutcomes)}
+                        onClick={(e) => { e.stopPropagation(); setShowAllOutcomes(!showAllOutcomes); }}
                         className="text-[10px] font-bold text-slate-500 hover:text-slate-300 transition-colors py-1 self-center"
                     >
                         {showAllOutcomes ? 'Show Less' : `+ ${outcomes.length - 2} More Outcomes`}
@@ -235,7 +239,7 @@ export const PredictionCard = ({
                     >
                         <div className="flex justify-between items-center">
                             <span className="text-xs font-bold text-slate-400 uppercase">Stake on {outcomes[betMode]}</span>
-                            <button onClick={() => setBetMode(null)} className="text-slate-500 hover:text-white">✕</button>
+                            <button onClick={(e) => { e.stopPropagation(); setBetMode(null); }} className="text-slate-500 hover:text-white">✕</button>
                         </div>
                         <div className="relative">
                             <input
@@ -260,7 +264,7 @@ export const PredictionCard = ({
                             ))}
                         </div>
                         <button
-                            onClick={confirmBet}
+                            onClick={(e) => { e.stopPropagation(); confirmBet(); }}
                             className="w-full h-12 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 rounded-xl font-bold text-sm shadow-lg shadow-purple-500/20 active:scale-[0.98] transition-all"
                         >
                             Confirm Prediction
@@ -273,7 +277,7 @@ export const PredictionCard = ({
             {resolved && (
                 <div className="pt-2 border-t border-white/5 flex justify-between items-center">
                     <span className="text-[10px] font-bold text-slate-500 uppercase">Resolved</span>
-                    <button className="text-[10px] font-bold text-green-400 hover:underline">Claim Winnings</button>
+                    <button onClick={(e) => { e.stopPropagation(); /* claim logic */ }} className="text-[10px] font-bold text-green-400 hover:underline">Claim Winnings</button>
                 </div>
             )}
         </motion.div>
