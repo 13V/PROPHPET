@@ -115,6 +115,12 @@ export const MarketWarRoom = ({ isOpen, onClose, market }: MarketWarRoomProps) =
     const isExpired = Date.now() > (market.endTime * 1000);
     const resolved = market.resolved;
 
+    const shareToX = () => {
+        const text = encodeURIComponent(`I'm predicting on "${market.question}" using @ProphetProtocol! 🔮\n\nPredictions live on Solana. #PROPHET #Solana`);
+        const url = encodeURIComponent(window.location.href);
+        window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
+    };
+
     return (
         <AnimatePresence>
             {isOpen && (
@@ -125,22 +131,30 @@ export const MarketWarRoom = ({ isOpen, onClose, market }: MarketWarRoomProps) =
                     className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8"
                 >
                     {/* Backdrop */}
-                    <div className="absolute inset-0 bg-black/90 backdrop-blur-2xl" onClick={onClose} />
+                    <div className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={onClose} />
 
                     {/* Content Container */}
                     <motion.div
-                        initial={{ scale: 0.9, y: 20, opacity: 0 }}
-                        animate={{ scale: 1, y: 0, opacity: 1 }}
-                        exit={{ scale: 0.9, y: 20, opacity: 0 }}
-                        className={`relative w-full max-w-6xl h-full max-h-[90vh] bg-gray-950 border border-white/10 rounded-[2rem] overflow-hidden flex flex-col md:flex-row shadow-2xl ${isExpired && !resolved ? 'grayscale' : ''}`}
+                        initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                        animate={{ scale: 1, opacity: 1, y: 0 }}
+                        exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                        className="relative w-full max-w-6xl h-full max-h-[850px] bg-gray-950 border border-white/10 rounded-[2rem] overflow-hidden flex flex-col md:flex-row shadow-[0_0_100px_rgba(168,85,247,0.1)]"
                     >
-                        {/* Close Button */}
-                        <button
-                            onClick={onClose}
-                            className="absolute top-6 right-6 z-10 p-2 rounded-full bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all"
-                        >
-                            <X size={20} />
-                        </button>
+                        {/* Control Buttons */}
+                        <div className="absolute top-6 right-6 z-50 flex items-center gap-3">
+                            <button
+                                onClick={shareToX}
+                                className="p-2.5 bg-gray-900 border border-white/10 rounded-full text-gray-400 hover:text-white hover:border-white/20 transition-all hover:scale-110"
+                            >
+                                <Share2 size={18} />
+                            </button>
+                            <button
+                                onClick={onClose}
+                                className="p-2.5 bg-gray-900 border border-white/10 rounded-full text-gray-400 hover:text-white hover:border-white/20 transition-all hover:scale-110"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
 
                         {/* Left Side: Analysis & Chart */}
                         <div className="flex-1 p-8 md:p-12 overflow-y-auto scrollbar-hide">
