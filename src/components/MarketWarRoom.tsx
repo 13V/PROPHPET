@@ -17,8 +17,32 @@ export const MarketWarRoom = ({ isOpen, onClose, market }: MarketWarRoomProps) =
     const [pythData, setPythData] = useState<number[] | null>(null);
 
     // Extraction Logic for "Up/Down" markets
-    const priceTarget = market?.question?.match(/\$(\d{1,3}(,\d{3})*(\.\d+)?)/)?.[0] ||
-        market?.question?.match(/(\d{2,3}k)|(\d{5,})/i)?.[0];
+    // Priority: Question -> Slug -> EventTitle
+    const findTarget = () => {
+        const fullSource = `${market?.question} ${market?.slug || ''} ${market?.eventTitle || ''}`.toLowerCase();
+
+        // 1. Check for standard money format ($96,000)
+        const matchMoney = fullSource.match(/\$(\d{1,3}(,\d{3})*(\.\d+)?)/);
+        if (matchMoney) return matchMoney[0];
+
+        // 2. Check for "at" followed by price (price at 96000)
+        const matchAt = fullSource.match(/at\s+(\d{2,3}k|\d{4,})/);
+        if (matchAt) return `$${matchAt[1]}`;
+
+        // 3. Fallback to any large numbers or "k" shorthand
+        const matchK = fullSource.match(/(\d{2,3}k)|(\d{5,})/i);
+        if (matchK) return `$${matchK[0]}`;
+
+        return null;
+    };
+
+    const priceTarget = findTarget();
+
+    useEffect(() => {
+        if (isOpen && market?.category?.toLowerCase().includes('crypto')) {
+            console.log(`[WarRoom] Init: "${market?.question}" | Target: ${priceTarget}`);
+        }
+    }, [isOpen, market, priceTarget]);
 
     // Pyth Integration
     useEffect(() => {

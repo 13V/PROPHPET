@@ -21,6 +21,8 @@ interface FeaturedMarketProps {
         noVotes: number;
         totalVolume: number;
         outcomeLabels?: string[];
+        slug?: string;
+        eventTitle?: string;
     };
     onOpenCreateModal?: () => void;
     onOpenExpanded?: () => void;
@@ -36,9 +38,32 @@ export const FeaturedMarket = ({ data, onOpenCreateModal, onOpenExpanded }: Feat
     const [pythPrice, setPythPrice] = useState<number | null>(null);
 
     // Extraction Logic for "Up/Down" markets
-    // Look for $ price, then fallback to high numbers (e.g. 96k, 100000)
-    const priceTarget = data?.question?.match(/\$(\d{1,3}(,\d{3})*(\.\d+)?)/)?.[0] ||
-        data?.question?.match(/(\d{2,3}k)|(\d{5,})/i)?.[0];
+    // Priority: Question -> Slug -> EventTitle
+    const findTarget = () => {
+        const fullSource = `${data?.question} ${data?.slug || ''} ${data?.eventTitle || ''}`.toLowerCase();
+
+        // 1. Check for standard money format ($96,000)
+        const matchMoney = fullSource.match(/\$(\d{1,3}(,\d{3})*(\.\d+)?)/);
+        if (matchMoney) return matchMoney[0];
+
+        // 2. Check for "at" followed by price (price at 96000)
+        const matchAt = fullSource.match(/at\s+(\d{2,3}k|\d{4,})/);
+        if (matchAt) return `$${matchAt[1]}`;
+
+        // 3. Fallback to any large numbers or "k" shorthand
+        const matchK = fullSource.match(/(\d{2,3}k)|(\d{5,})/i);
+        if (matchK) return `$${matchK[0]}`;
+
+        return null;
+    };
+
+    const priceTarget = findTarget();
+
+    useEffect(() => {
+        if (data?.category?.toLowerCase().includes('crypto') && priceTarget) {
+            console.log(`[Featured] Init: "${data?.question}" | Target: ${priceTarget}`);
+        }
+    }, [data, priceTarget]);
 
     // Pyth Integration
     useEffect(() => {

@@ -22,6 +22,8 @@ interface PredictionCardProps {
     winningOutcome?: number;
     polymarketId?: string;
     isHot?: boolean;
+    slug?: string;
+    eventTitle?: string;
     onOpenExpanded?: () => void;
     onSettle?: (id: number) => void;
 }
@@ -38,6 +40,8 @@ export const PredictionCard = ({
     winningOutcome,
     polymarketId,
     isHot,
+    slug,
+    eventTitle,
     onOpenExpanded,
     onSettle
 }: PredictionCardProps) => {
@@ -53,9 +57,32 @@ export const PredictionCard = ({
     const [pythPrice, setPythPrice] = useState<number | null>(null);
 
     // Extraction Logic for "Up/Down" markets
-    // Look for $ price, then fallback to high numbers (e.g. 96k, 100000)
-    const priceTarget = question.match(/\$(\d{1,3}(,\d{3})*(\.\d+)?)/)?.[0] ||
-        question.match(/(\d{2,3}k)|(\d{5,})/i)?.[0];
+    // Priority: Question -> Slug -> EventTitle
+    const findTarget = () => {
+        const fullSource = `${question} ${slug || ''} ${eventTitle || ''}`.toLowerCase();
+
+        // 1. Check for standard money format ($96,000)
+        const matchMoney = fullSource.match(/\$(\d{1,3}(,\d{3})*(\.\d+)?)/);
+        if (matchMoney) return matchMoney[0];
+
+        // 2. Check for "at" followed by price (price at 96000)
+        const matchAt = fullSource.match(/at\s+(\d{2,3}k|\d{4,})/);
+        if (matchAt) return `$${matchAt[1]}`;
+
+        // 3. Fallback to any large numbers or "k" shorthand
+        const matchK = fullSource.match(/(\d{2,3}k)|(\d{5,})/i);
+        if (matchK) return `$${matchK[0]}`;
+
+        return null;
+    };
+
+    const priceTarget = findTarget();
+
+    useEffect(() => {
+        if (category.toLowerCase().includes('crypto')) {
+            console.log(`[Card ${id}] Init: "${question}" | Slug: "${slug}" | Target: ${priceTarget}`);
+        }
+    }, [category, question, slug, priceTarget, id]);
 
     // Lifecycle Logic
     const isExpired = Date.now() > endTime * 1000;

@@ -30,11 +30,21 @@ export async function getPythPrices(symbols: string[]): Promise<Record<string, n
     if (ids.length === 0) return {};
 
     try {
-        const response = await fetch(`https://hermes.pyth.network/v2/updates/price/latest?ids[]=${ids.join('&ids[]=')}`);
-        if (!response.ok) throw new Error('Pyth API failure');
+        const url = `https://hermes.pyth.network/v2/updates/price/latest?ids[]=${ids.join('&ids[]=')}`;
+        console.log(`[Pyth] Fetching: ${url}`);
+        const response = await fetch(url);
+        if (!response.ok) {
+            console.error(`[Pyth] API failure: ${response.status}`);
+            throw new Error('Pyth API failure');
+        }
 
         const data = await response.json();
         const prices: Record<string, number> = {};
+
+        if (!data.parsed) {
+            console.warn('[Pyth] No parsed data from Hermes', data);
+            return {};
+        }
 
         // Hermes returns an array of price updates
         data.parsed.forEach((update: any) => {
@@ -43,7 +53,9 @@ export async function getPythPrices(symbols: string[]): Promise<Record<string, n
             if (symbol) {
                 const p = update.price;
                 // Price is (price * 10^expo)
-                prices[symbol] = parseFloat(p.price) * Math.pow(10, p.expo);
+                const priceNum = parseFloat(p.price) * Math.pow(10, p.expo);
+                prices[symbol] = priceNum;
+                console.log(`[Pyth] Updated ${symbol}: $${priceNum.toLocaleString()}`);
             }
         });
 

@@ -64,7 +64,7 @@ export async function fetchPolymarketTrending(limit = 50, offset = 0, sortBy = '
             }
 
             const events: PolymarketEvent[] = await response.json();
-            console.log(`Debug: Received ${events.length} raw events from ${usedSource}`);
+            console.log(`[Polymarket] Received ${events.length} raw events from ${usedSource}`);
 
             // Map to our internal format
             return events.map(event => {
@@ -158,7 +158,9 @@ export async function fetchPolymarketTrending(limit = 50, offset = 0, sortBy = '
                     totalLiquidity: totalVolume,
                     resolved: false,
                     isHot: totalVolume > 100000,
-                    polymarketId: market.id
+                    polymarketId: market.id,
+                    slug: event.slug,
+                    eventTitle: event.title
                 };
             }).filter(item => item !== null);
 

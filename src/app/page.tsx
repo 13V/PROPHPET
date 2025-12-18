@@ -233,6 +233,8 @@ export default function Home() {
                       {...p}
                       onOpenExpanded={() => openWarRoom(p)}
                       onSettle={handleSettle}
+                      slug={p.slug}
+                      eventTitle={p.eventTitle}
                     />
                   ))}
                 </div>
@@ -248,6 +250,8 @@ export default function Home() {
                         {...p}
                         onOpenExpanded={() => openWarRoom(p)}
                         onSettle={handleSettle}
+                        slug={p.slug}
+                        eventTitle={p.eventTitle}
                       />
                     ))}
                   </div>
@@ -262,6 +266,8 @@ export default function Home() {
                         {...p}
                         onOpenExpanded={() => openWarRoom(p)}
                         onSettle={handleSettle}
+                        slug={p.slug}
+                        eventTitle={p.eventTitle}
                       />
                     ))}
                   </div>
@@ -276,6 +282,8 @@ export default function Home() {
                         {...p}
                         onOpenExpanded={() => openWarRoom(p)}
                         onSettle={handleSettle}
+                        slug={p.slug}
+                        eventTitle={p.eventTitle}
                       />
                     ))}
                   </div>
