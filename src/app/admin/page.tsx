@@ -27,10 +27,9 @@ import {
     downloadRewardsCSV
 } from '@/utils/rewardCalculation';
 
-// Admin wallet addresses (replace with your actual admin wallet)
+// Admin wallet addresses
 const ADMIN_WALLETS = [
-    'REPLACE_WITH_YOUR_ADMIN_WALLET_ADDRESS',
-    // Add more admin wallets here
+    'FUy2dxo5ZF2WhvRunw8fq8Nau3GX3NFis8AgYavxASX2', // Dev Wallet
 ];
 
 import { dailyPredictions } from '@/data/predictions';

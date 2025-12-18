@@ -10,6 +10,9 @@ export const metadata: Metadata = {
   title: "PROPHET | The Future is Prediction",
   description: "The premier multi-outcome prediction protocol. Stake $PROPHET, predict events, and prove your foresight.",
   keywords: ["prediction market", "prophet protocol", "solana", "betting", "crypto"],
+};
+
+export const viewport = {
   themeColor: "#020617",
 };
 

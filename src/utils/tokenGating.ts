@@ -1,7 +1,6 @@
 import { Connection, PublicKey } from '@solana/web3.js';
+import { BETTING_MINT } from '@/services/web3';
 
-// Real $PROPHET token contract address from Pump.fun (Aligned with page.tsx)
-const PROPHET_TOKEN_ADDRESS = 'HqQqPtf7FgFySXDHrTzExbGKUt4axd1JJQRDr9kZpump';
 const MINIMUM_TOKENS = 1000; // Minimum tokens required to vote
 
 /**
@@ -22,7 +21,7 @@ export async function hasMinimumTokens(
     }
 
     const walletPublicKey = new PublicKey(walletAddress);
-    const tokenPublicKey = new PublicKey(PROPHET_TOKEN_ADDRESS);
+    const tokenPublicKey = BETTING_MINT;
 
     // Get token accounts for this wallet
     const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
@@ -58,7 +57,7 @@ export async function getTokenBalance(
     }
 
     const walletPublicKey = new PublicKey(walletAddress);
-    const tokenPublicKey = new PublicKey(PROPHET_TOKEN_ADDRESS);
+    const tokenPublicKey = BETTING_MINT;
 
     const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
       walletPublicKey,
