@@ -74,6 +74,24 @@ export const PredictionCard = ({
         }
     }, [publicKey, id]);
 
+    // Automatic Settlement Timer
+    useEffect(() => {
+        if (resolved) return;
+
+        const checkSettlement = () => {
+            if (Date.now() >= endTime * 1000) {
+                onSettle?.(id);
+            }
+        };
+
+        // Check immediately
+        checkSettlement();
+
+        // Set interval to check every second for precision
+        const interval = setInterval(checkSettlement, 1000);
+        return () => clearInterval(interval);
+    }, [endTime, id, resolved, onSettle]);
+
     const handleOutcomeClick = (e: React.MouseEvent, index: number) => {
         e.stopPropagation();
         if (isExpired || resolved) {
@@ -254,19 +272,6 @@ export const PredictionCard = ({
                 )}
             </div>
 
-            {/* Settle Market Button */}
-            {isExpired && !resolved && (
-                <button
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        haptic('success');
-                        onSettle?.(id);
-                    }}
-                    className="w-full py-4 bg-white text-black font-black text-xs uppercase tracking-widest rounded-xl hover:bg-gray-200 transition-all shadow-xl z-30"
-                >
-                    SETTLE MARKET & MOVE TO RESOLVED
-                </button>
-            )}
 
             {/* Bet Modal Overlay */}
             <AnimatePresence>

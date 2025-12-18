@@ -86,9 +86,21 @@ export default function Home() {
 
   // Derived Sorted List Logic
   const filtered = predictions.filter(m => {
-    const matchesCat = activeCategory === 'all' || m.category?.toLowerCase() === activeCategory.toLowerCase();
+    const isResolved = m.resolved === true;
+    const viewingResolved = activeCategory === 'resolved';
+
+    // 1. Category Filter
+    const matchesCat = viewingResolved
+      ? isResolved
+      : (activeCategory === 'all' || m.category?.toLowerCase() === activeCategory.toLowerCase());
+
+    // 2. Resolved Filter (Don't show resolved in active categories)
+    const matchesResolved = viewingResolved ? isResolved : !isResolved;
+
+    // 3. Search Filter
     const matchesSearch = !searchQuery || m.question?.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCat && matchesSearch;
+
+    return matchesCat && matchesResolved && matchesSearch;
   });
 
   const sortedPredictions = [...filtered].sort((a, b) => {
