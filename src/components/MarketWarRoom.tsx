@@ -88,15 +88,18 @@ export const MarketWarRoom = ({ isOpen, onClose, market }: MarketWarRoomProps) =
     // Dynamic Category Coloring (Professional Themes)
     const getCategoryTheme = (cat: string) => {
         const c = cat.toLowerCase();
+        const q = market.question.toLowerCase();
+        if (q.includes(' vs ') || q.includes(' vs. ') || c.includes('sports')) return { color: '#f59e0b', glow: 'rgba(245, 158, 11, 0.15)', text: 'text-amber-400', border: 'border-amber-500/30' };
+
         if (c.includes('crypto')) return { color: '#06b6d4', glow: 'rgba(6, 182, 212, 0.15)', text: 'text-cyan-400', border: 'border-cyan-500/30' };
         if (c.includes('politics')) return { color: '#ef4444', glow: 'rgba(239, 68, 68, 0.15)', text: 'text-red-400', border: 'border-red-500/30' };
-        if (c.includes('sports')) return { color: '#f59e0b', glow: 'rgba(245, 158, 11, 0.15)', text: 'text-amber-400', border: 'border-amber-500/30' };
         if (c.includes('esports')) return { color: '#ec4899', glow: 'rgba(236, 72, 153, 0.15)', text: 'text-pink-400', border: 'border-pink-500/30' };
         if (c.includes('news')) return { color: '#10b981', glow: 'rgba(16, 185, 129, 0.15)', text: 'text-emerald-400', border: 'border-emerald-500/30' };
         return { color: '#a855f7', glow: 'rgba(168, 85, 247, 0.15)', text: 'text-purple-400', border: 'border-purple-500/30' }; // Default
     };
 
     const theme = getCategoryTheme(market.category || '');
+    const displayCategory = (market.question.toLowerCase().includes(' vs ') || market.question.toLowerCase().includes(' vs. ')) ? 'SPORTS' : market.category;
     const isExpired = Date.now() > (market.endTime * 1000);
     const resolved = market.resolved;
 
@@ -131,7 +134,7 @@ export const MarketWarRoom = ({ isOpen, onClose, market }: MarketWarRoomProps) =
                         <div className="flex-1 p-8 md:p-12 overflow-y-auto scrollbar-hide">
                             <div className="flex items-center gap-3 mb-6">
                                 <span className={`bg-gray-900 ${theme.text} text-[10px] font-black px-3 py-1 rounded-full border ${theme.border} uppercase tracking-widest`}>
-                                    {market.category}
+                                    {displayCategory}
                                 </span>
                                 <span className="text-gray-500 text-xs font-mono">Market ID: #{market.id}</span>
                                 {isExpired && !resolved && (
