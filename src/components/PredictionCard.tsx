@@ -78,19 +78,26 @@ export const PredictionCard = ({
 
     const priceTarget = findTarget();
 
+    const isCrypto = category.toLowerCase().includes('crypto') ||
+        question.toLowerCase().match(/bitcoin|btc|ethereum|eth|solana|sol|price/i) ||
+        slug?.toLowerCase().match(/bitcoin|btc|ethereum|eth|solana|sol|price/i);
+
     useEffect(() => {
-        if (category.toLowerCase().includes('crypto')) {
-            console.log(`[Card ${id}] Init: "${question}" | Slug: "${slug}" | Target: ${priceTarget}`);
+        if (isCrypto) {
+            console.log(
+                `%c[Card ${id}] Init: "${question}" | Target: ${priceTarget}`,
+                'background: #7c3aed; color: white; font-weight: bold; padding: 2px 5px; border-radius: 3px;'
+            );
         }
-    }, [category, question, slug, priceTarget, id]);
+    }, [isCrypto, question, priceTarget, id]);
 
     // Lifecycle Logic
     const isExpired = Date.now() > endTime * 1000;
 
     // Derived Data for Pyth
     useEffect(() => {
-        if (category.toLowerCase().includes('crypto')) {
-            const q = question.toLowerCase();
+        if (isCrypto) {
+            const q = `${question} ${slug || ''} ${eventTitle || ''}`.toLowerCase();
             let symbol = '';
             if (q.includes('bitcoin') || q.includes('btc')) symbol = 'BTC';
             else if (q.includes('ethereum') || q.includes('eth')) symbol = 'ETH';

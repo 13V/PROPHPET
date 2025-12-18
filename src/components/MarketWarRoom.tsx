@@ -38,18 +38,25 @@ export const MarketWarRoom = ({ isOpen, onClose, market }: MarketWarRoomProps) =
 
     const priceTarget = findTarget();
 
+    const isCrypto = market?.category?.toLowerCase().includes('crypto') ||
+        market?.question?.toLowerCase().match(/bitcoin|btc|ethereum|eth|solana|sol|price/i) ||
+        market?.slug?.toLowerCase().match(/bitcoin|btc|ethereum|eth|solana|sol|price/i);
+
     useEffect(() => {
-        if (isOpen && market?.category?.toLowerCase().includes('crypto')) {
-            console.log(`[WarRoom] Init: "${market?.question}" | Target: ${priceTarget}`);
+        if (isOpen && isCrypto) {
+            console.log(
+                `%c[WarRoom] Init: "${market?.question}" | Target: ${priceTarget}`,
+                'background: #3b82f6; color: white; font-weight: bold; padding: 2px 5px; border-radius: 3px;'
+            );
         }
-    }, [isOpen, market, priceTarget]);
+    }, [isOpen, market, priceTarget, isCrypto]);
 
     // Pyth Integration
     useEffect(() => {
         if (!isOpen || !market) return;
 
-        if (market.category?.toLowerCase().includes('crypto') || market.question?.toLowerCase().includes('bitcoin')) {
-            const q = market.question?.toLowerCase() || '';
+        if (isCrypto) {
+            const q = `${market.question} ${market.slug || ''} ${market.eventTitle || ''}`.toLowerCase();
             let symbol = '';
             if (q.includes('bitcoin') || q.includes('btc')) symbol = 'BTC';
             else if (q.includes('ethereum') || q.includes('eth')) symbol = 'ETH';
@@ -74,7 +81,7 @@ export const MarketWarRoom = ({ isOpen, onClose, market }: MarketWarRoomProps) =
                 return () => clearInterval(interval);
             }
         }
-    }, [isOpen, market]);
+    }, [isOpen, market, isCrypto]);
 
     if (!market) return null;
 

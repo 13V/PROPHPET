@@ -59,16 +59,23 @@ export const FeaturedMarket = ({ data, onOpenCreateModal, onOpenExpanded }: Feat
 
     const priceTarget = findTarget();
 
+    const isCrypto = data?.category?.toLowerCase().includes('crypto') ||
+        data?.question?.toLowerCase().match(/bitcoin|btc|ethereum|eth|solana|sol|price/i) ||
+        data?.slug?.toLowerCase().match(/bitcoin|btc|ethereum|eth|solana|sol|price/i);
+
     useEffect(() => {
-        if (data?.category?.toLowerCase().includes('crypto') && priceTarget) {
-            console.log(`[Featured] Init: "${data?.question}" | Target: ${priceTarget}`);
+        if (isCrypto && priceTarget) {
+            console.log(
+                `%c[Featured] Init: "${data?.question}" | Target: ${priceTarget}`,
+                'background: #ec4899; color: white; font-weight: bold; padding: 2px 5px; border-radius: 3px;'
+            );
         }
-    }, [data, priceTarget]);
+    }, [isCrypto, data, priceTarget]);
 
     // Pyth Integration
     useEffect(() => {
-        if (data?.category?.toLowerCase().includes('crypto') || data?.question?.toLowerCase().includes('bitcoin')) {
-            const q = data?.question?.toLowerCase() || '';
+        if (isCrypto) {
+            const q = `${data?.question} ${data?.slug || ''} ${data?.eventTitle || ''}`.toLowerCase();
             let symbol = '';
             if (q.includes('bitcoin') || q.includes('btc')) symbol = 'BTC';
             else if (q.includes('ethereum') || q.includes('eth')) symbol = 'ETH';
@@ -93,7 +100,7 @@ export const FeaturedMarket = ({ data, onOpenCreateModal, onOpenExpanded }: Feat
                 return () => clearInterval(interval);
             }
         }
-    }, [data]);
+    }, [isCrypto, data]);
 
     const handleConfirmBet = async () => {
         if (!connected || !publicKey) {

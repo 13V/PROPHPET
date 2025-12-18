@@ -34,7 +34,7 @@ export async function getPythPrices(symbols: string[]): Promise<Record<string, n
         console.log(`[Pyth] Fetching: ${url}`);
         const response = await fetch(url);
         if (!response.ok) {
-            console.error(`[Pyth] API failure: ${response.status}`);
+            console.error(`%c[Pyth] API failure: ${response.status}`, 'background: #ef4444; color: white; font-weight: bold; padding: 2px 5px; border-radius: 3px;');
             throw new Error('Pyth API failure');
         }
 
@@ -42,7 +42,7 @@ export async function getPythPrices(symbols: string[]): Promise<Record<string, n
         const prices: Record<string, number> = {};
 
         if (!data.parsed) {
-            console.warn('[Pyth] No parsed data from Hermes', data);
+            console.warn('%c[Pyth] No parsed data from Hermes', 'background: #f59e0b; color: white; font-weight: bold; padding: 2px 5px; border-radius: 3px;', data);
             return {};
         }
 
@@ -55,7 +55,10 @@ export async function getPythPrices(symbols: string[]): Promise<Record<string, n
                 // Price is (price * 10^expo)
                 const priceNum = parseFloat(p.price) * Math.pow(10, p.expo);
                 prices[symbol] = priceNum;
-                console.log(`[Pyth] Updated ${symbol}: $${priceNum.toLocaleString()}`);
+                console.log(
+                    `%c[Pyth] Updated ${symbol}: $${priceNum.toLocaleString()}`,
+                    'background: #10b981; color: white; font-weight: bold; padding: 2px 5px; border-radius: 3px;'
+                );
             }
         });
 
