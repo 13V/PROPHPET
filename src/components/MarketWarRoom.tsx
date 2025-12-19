@@ -121,7 +121,7 @@ export const MarketWarRoom = ({ isOpen, onClose, market }: MarketWarRoomProps) =
                 // Initial Fetch: Sparkline (once) and Price
                 const initFetch = async () => {
                     try {
-                        const [sparkline, prices] = await Promise.all([
+                        const [{ sparkline }, prices] = await Promise.all([
                             getCoinGeckoSparkline(symbol),
                             getPythPrices([symbol])
                         ]);

@@ -58,6 +58,7 @@ export const PredictionCard = ({
     const [showAllOutcomes, setShowAllOutcomes] = useState(false);
     const [pythData, setPythData] = useState<number[] | null>(null);
     const [pythPrice, setPythPrice] = useState<number | null>(null);
+    const [openPrice, setOpenPrice] = useState<number | null>(null);
 
     // Extraction Logic for "Up/Down" markets
     // Priority: Question -> Slug -> EventTitle -> Description
@@ -131,9 +132,12 @@ export const PredictionCard = ({
             }
 
             // ULTIMATE FALLBACK: For "Up or Down" markets with no target, it's usually "Close > Open"
-            // Render as: "Bitcoin > Open Price?"
+            // Render as: "Bitcoin Greater or Less than $84,320?" (User Request)
             if (!priceTarget) {
-                return `${asset} > Open Price${timeStr}?`;
+                if (openPrice) {
+                    return `${asset} Greater or Less than $${openPrice.toLocaleString()}?`;
+                }
+                return `${asset} Greater or Less than Daily Open${timeStr}?`;
             }
         }
 
@@ -169,11 +173,12 @@ export const PredictionCard = ({
                 // Initial Fetch: Sparkline (once) and Price
                 const initFetch = async () => {
                     try {
-                        const [sparkline, prices] = await Promise.all([
+                        const [{ sparkline, openPrice }, prices] = await Promise.all([
                             getCoinGeckoSparkline(symbol),
                             getPythPrices([symbol])
                         ]);
                         if (sparkline.length > 0) setPythData(sparkline);
+                        if (openPrice) setOpenPrice(openPrice);
                         if (prices[symbol]) setPythPrice(prices[symbol]);
                     } catch (e) {
                         console.error('Initial pricing fetch error:', e);
