@@ -79,6 +79,8 @@ export const CreateMarketModal = ({ isOpen, onClose }: CreateMarketModalProps) =
             yesVotes: 1, // Start with 1 vote each to avoid /0
             noVotes: 1,
             totalVolume: 100, // Initial liquidity
+            minBet: 1,
+            maxBet: 1000000,
             isHot: true, // New markets are hot!
             status: 'active' as const
         };

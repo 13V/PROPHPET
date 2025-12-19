@@ -17,10 +17,11 @@ import { MarketWarRoom } from "@/components/MarketWarRoom";
 import { TraderDashboard } from "@/components/TraderDashboard";
 import { useWallet } from '@solana/wallet-adapter-react';
 
-import { fetchPolymarketTrending } from '@/services/polymarket';
+import { fetchPolymarketTrending, fetchMarketResult } from '@/services/polymarket';
 import { generateSyntheticMarkets } from '@/data/synthetic';
 import { realSnapshot } from '@/data/real_snapshot';
-import { getUserMarkets } from '@/utils/marketStorage';
+import { getUserMarkets, resolveUserMarket } from '@/utils/marketStorage';
+import { saveResolution, getResolutionStatus } from '@/utils/voteStorage';
 
 const CONTRACT_ADDRESS = 'HqQqPtf7FgFySXDHrTzExbGKUt4axd1JJQRDr9kZpump';
 
@@ -45,10 +46,32 @@ export default function Home() {
     setIsWarRoomOpen(true);
   };
 
-  const handleSettle = (id: number) => {
+  const handleSettle = async (id: number) => {
+    const market = predictions.find(p => p.id === id);
+    if (!market) return;
+
+    let winningOutcome = 0; // Default to YES/Index 0 if unknown
+
+    // 1. Try to fetch real oracle result if it's a Polymarket item
+    if (market.polymarketId) {
+      try {
+        const result = await fetchMarketResult(id);
+        if (result === 'no') winningOutcome = 1;
+        else if (result === 'yes') winningOutcome = 0;
+
+        // Persist Polymarket resolution
+        saveResolution(id, result || 'yes');
+      } catch (e) {
+        console.error("Failed to auto-resolve polymarket:", e);
+      }
+    } else {
+      // 2. Persist User-created market resolution
+      resolveUserMarket(id);
+    }
+
     setPredictions(prev => prev.map(p => {
       if (p.id === id) {
-        return { ...p, resolved: true, winningOutcome: 0 };
+        return { ...p, resolved: true, winningOutcome };
       }
       return p;
     }));
@@ -64,7 +87,19 @@ export default function Home() {
         const dailyMarkets = await fetchDailyMarkets(50);
 
         const userMarkets = getUserMarkets();
-        const mergedList = [...userMarkets, ...dailyMarkets];
+        const mergedList = [...userMarkets, ...dailyMarkets].map(m => {
+          const res = getResolutionStatus(m.id);
+          if (res) {
+            return {
+              ...m,
+              resolved: true,
+              winningOutcome: res === 'yes' ? 0 : 1
+            };
+          }
+          // Also handle legacy/user status
+          if (m.status === 'resolved') return { ...m, resolved: true, winningOutcome: 0 };
+          return m;
+        });
 
         setPredictions(mergedList);
         setFetchError(mergedList.length === 0 ? "No markets found." : false);
@@ -86,7 +121,8 @@ export default function Home() {
 
   // Derived Sorted List Logic
   const filtered = predictions.filter(m => {
-    const isResolved = m.resolved === true;
+    // A market is resolved if the flag is set OR if we have a persisted resolution OR if it's explicitly marked in status
+    const isResolved = m.resolved === true || getResolutionStatus(m.id) !== null || (m.status === 'resolved');
     const viewingResolved = activeCategory === 'resolved';
 
     // 1. Category Filter

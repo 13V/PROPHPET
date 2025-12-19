@@ -41,6 +41,20 @@ export function getUserMarkets(): Market[] {
 }
 
 /**
+ * Mark a user market as resolved in localStorage
+ */
+export function resolveUserMarket(id: number): void {
+    const markets = getUserMarkets();
+    const updated = markets.map(m => {
+        if (m.id === id) {
+            return { ...m, status: 'resolved' as const };
+        }
+        return m;
+    });
+    localStorage.setItem(MARKETS_KEY, JSON.stringify(updated));
+}
+
+/**
  * Clear user markets
  */
 export function clearUserMarkets(): void {

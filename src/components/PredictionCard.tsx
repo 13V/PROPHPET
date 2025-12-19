@@ -216,8 +216,15 @@ export const PredictionCard = ({
         if (betMode === null || !connected) return;
 
         const amount = parseFloat(stakeAmount);
+        const MAX_BET = 1000000;
+
         if (isNaN(amount) || amount <= 0) {
             toast.error("Enter a valid amount");
+            return;
+        }
+
+        if (amount > MAX_BET) {
+            toast.error(`Exceeds max bet of ${MAX_BET.toLocaleString()} $PROPHET`);
             return;
         }
 
@@ -426,7 +433,10 @@ export const PredictionCard = ({
                                 placeholder="0.00"
                                 className="w-full h-12 bg-white/5 border border-white/10 rounded-xl px-4 font-mono font-bold text-xl focus:border-purple-500 focus:outline-none transition-all"
                             />
-                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500">$PROPHET</span>
+                            <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-end">
+                                <span className="text-[10px] text-gray-500 font-bold uppercase">Max: 1M</span>
+                                <span className="text-xs font-bold text-slate-500">$PROPHET</span>
+                            </div>
                         </div>
                         <div className="grid grid-cols-4 gap-2">
                             {['100', '500', '1k', '5k'].map(val => (

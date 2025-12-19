@@ -4,10 +4,17 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const limit = searchParams.get('limit') || '50';
     const offset = searchParams.get('offset') || '0';
+    const closed = searchParams.get('closed') || 'false';
+    const id = searchParams.get('id');
 
     try {
         // Direct call to Polymarket (Server-side, no CORS proxy needed)
-        const targetUrl = `https://gamma-api.polymarket.com/events?active=true&closed=false&order=liquidity&ascending=false&limit=${limit}&offset=${offset}`;
+        let targetUrl = `https://gamma-api.polymarket.com/events?closed=${closed}&order=liquidity&ascending=false&limit=${limit}&offset=${offset}`;
+
+        if (id) {
+            // If id is provided, fetch specific event/market
+            targetUrl = `https://gamma-api.polymarket.com/events?id=${id}`;
+        }
 
         console.log(`[API] Fetching: ${targetUrl}`);
 
