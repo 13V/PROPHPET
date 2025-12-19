@@ -85,6 +85,10 @@ export const PredictionCard = ({
 
     const priceTarget = findTarget();
 
+    const isCrypto = category.toLowerCase().includes('crypto') ||
+        question.toLowerCase().match(/bitcoin|btc|ethereum|eth|solana|sol|price/i) ||
+        slug?.toLowerCase().match(/bitcoin|btc|ethereum|eth|solana|sol|price/i);
+
     // Title Reconstruction Logic
     const reconstructTitle = () => {
         if (!isCrypto) return question;
@@ -116,18 +120,6 @@ export const PredictionCard = ({
     const displayTitle = reconstructTitle();
 
     // UNIVERSAL PROBE: Log all props once per ID to see what Polymarket is sending
-    useEffect(() => {
-        console.log(
-            `%c[PROBE ${id}] %c${question}`,
-            'background: #333; color: #fff; font-weight: bold; padding: 2px 5px;',
-            'color: #999;',
-            { category, slug, eventTitle, outcomes, polymarketId }
-        );
-    }, [id, question, category, slug, eventTitle, outcomes, polymarketId]);
-
-    const isCrypto = category.toLowerCase().includes('crypto') ||
-        question.toLowerCase().match(/bitcoin|btc|ethereum|eth|solana|sol|price/i) ||
-        slug?.toLowerCase().match(/bitcoin|btc|ethereum|eth|solana|sol|price/i);
 
     useEffect(() => {
         if (isCrypto) {
