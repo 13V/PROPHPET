@@ -6,6 +6,9 @@ import confetti from 'canvas-confetti';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { saveUserMarket } from '@/utils/marketStorage';
 import { hasMinimumTokens, getTokenBalance } from '@/utils/tokenGating';
+import { getProgram, getMarketPDA, getConfigPDA, getATA, BETTING_MINT } from '@/services/web3';
+import { BN } from '@project-serum/anchor';
+import { toast } from 'react-hot-toast';
 
 interface CreateMarketModalProps {
     isOpen: boolean;
@@ -18,7 +21,9 @@ export const CreateMarketModal = ({ isOpen, onClose }: CreateMarketModalProps) =
     const { publicKey } = useWallet();
     const [balance, setBalance] = useState<number | null>(null);
     const [eligible, setEligible] = useState(false);
+    const [withinLimit, setWithinLimit] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
+    const [lastCreationTime, setLastCreationTime] = useState<number | null>(null);
 
     // Variants for responsive animation
     const modalVariants = {
@@ -53,6 +58,39 @@ export const CreateMarketModal = ({ isOpen, onClose }: CreateMarketModalProps) =
         }
     }, [isOpen, publicKey]);
 
+    const checkDailyLimit = async () => {
+        if (!publicKey) return;
+        try {
+            const program = getProgram({ publicKey, signTransaction: undefined, sendTransaction: undefined });
+            if (!program) return;
+
+            // Fetch all markets authored by this user
+            const myMarkets = await program.account.market.all([
+                {
+                    memcmp: {
+                        offset: 8, // Authority is the first field after discriminator
+                        bytes: publicKey.toBase58()
+                    }
+                }
+            ]);
+
+            if (myMarkets.length > 0) {
+                // Sort by creation time (marketId is the timestamp)
+                const sorted = myMarkets.sort((a, b) => b.account.marketId.toNumber() - a.account.marketId.toNumber());
+                const lastCreation = sorted[0].account.marketId.toNumber();
+                const now = Date.now();
+                const dayInMs = 24 * 60 * 60 * 1000;
+
+                setLastCreationTime(lastCreation);
+                setWithinLimit(now - lastCreation > dayInMs);
+            } else {
+                setWithinLimit(true);
+            }
+        } catch (e) {
+            console.error("Failed to check daily limit:", e);
+        }
+    };
+
     const checkEligibility = async () => {
         if (!publicKey) return;
         setIsLoading(true);
@@ -60,6 +98,10 @@ export const CreateMarketModal = ({ isOpen, onClose }: CreateMarketModalProps) =
             const bal = await getTokenBalance(publicKey.toString());
             setBalance(bal);
             setEligible(bal >= CREATION_THRESHOLD);
+
+            if (bal >= CREATION_THRESHOLD) {
+                await checkDailyLimit();
+            }
         } catch (e) {
             console.error(e);
         } finally {
@@ -67,35 +109,65 @@ export const CreateMarketModal = ({ isOpen, onClose }: CreateMarketModalProps) =
         }
     };
 
-    const handleCreate = (e: React.FormEvent) => {
+    const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!publicKey) return;
 
-        const newMarket = {
-            id: Date.now(), // Simple unique ID
-            category,
-            question,
-            timeLeft: 'Ends ' + new Date(endDate).toLocaleDateString(),
-            endDate: new Date(endDate).toISOString(),
-            yesVotes: 1, // Start with 1 vote each to avoid /0
-            noVotes: 1,
-            totalVolume: 100, // Initial liquidity
-            minBet: 1,
-            maxBet: 1000000,
-            isHot: true, // New markets are hot!
-            status: 'active' as const
-        };
+        setIsLoading(true);
+        try {
+            const program = getProgram({ publicKey, signTransaction: undefined, sendTransaction: undefined });
+            if (!program) throw new Error("Wallet not connected");
 
-        saveUserMarket(newMarket);
+            const marketId = new BN(Date.now());
+            const endTimeBN = new BN(Math.floor(new Date(endDate).getTime() / 1000));
+            const outcomeNames = [
+                "YES", "NO", "", "", "", "", "", ""
+            ];
 
-        confetti({
-            particleCount: 100,
-            spread: 70,
-            origin: { y: 0.6 }
-        });
+            const marketPda = (await getMarketPDA(publicKey, question))[0];
+            const configPda = await getConfigPDA();
+            const vaultTokenAcc = await getATA(marketPda, BETTING_MINT);
 
-        alert("Market Successfully Created on Protocol! 🚀");
-        onClose();
-        window.location.reload(); // Simple reload to show new market
+            console.log("Initializing Market on-chain...");
+
+            await program.methods.initializeMarket(
+                marketId,
+                endTimeBN,
+                question,
+                2, // outcomeCount
+                outcomeNames,
+                null, // oracleKey
+                new BN(1), // minBet
+                new BN(1000000), // maxBet
+                "", // metadataUrl
+                ""  // polymarketId
+            ).accounts({
+                market: marketPda,
+                config: configPda,
+                authority: publicKey,
+                vaultTokenAccount: vaultTokenAcc,
+                mint: BETTING_MINT,
+                systemProgram: '11111111111111111111111111111111', // System program
+                tokenProgram: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+                rent: 'SysvarRent11111111111111111111111111111111'
+            }).rpc();
+
+            confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.6 }
+            });
+
+            toast.success("Market Successfully Created Globally! 🚀");
+            onClose();
+            // We'll let page.tsx fetch the new market from chain
+            setTimeout(() => window.location.reload(), 2000);
+        } catch (err: any) {
+            console.error("Initialization failed:", err);
+            toast.error(`Creation failed: ${err.message || 'Unknown error'}`);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     if (!isOpen) return null;
@@ -161,6 +233,19 @@ export const CreateMarketModal = ({ isOpen, onClose }: CreateMarketModalProps) =
                                         </div>
                                     </div>
 
+                                    {!withinLimit && (
+                                        <div className="bg-orange-500/10 border border-orange-500/20 p-4 rounded-xl flex flex-col items-center text-center gap-2 mb-6">
+                                            <Calendar className="text-orange-500 mb-2" size={32} />
+                                            <h3 className="text-orange-400 font-bold uppercase tracking-wider text-sm">Limit Reached</h3>
+                                            <p className="text-xs text-orange-500/70">
+                                                Prophet Protocol enforces a **1 market per day** limit for quality assurance.
+                                            </p>
+                                            <div className="mt-2 text-[10px] font-mono bg-orange-500/20 px-3 py-1 rounded-full text-orange-400 uppercase">
+                                                Next Slot: {new Date(lastCreationTime! + (24 * 60 * 60 * 1000)).toLocaleString()}
+                                            </div>
+                                        </div>
+                                    )}
+
                                     <div>
                                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
                                             Pump.fun Token Address (Utility Locked)
@@ -221,9 +306,13 @@ export const CreateMarketModal = ({ isOpen, onClose }: CreateMarketModalProps) =
 
                                     <button
                                         type="submit"
-                                        className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-purple-900/20 transition-all mt-4"
+                                        disabled={!withinLimit}
+                                        className={`w-full font-bold py-4 rounded-xl shadow-lg transition-all mt-4 ${withinLimit
+                                                ? 'bg-purple-600 hover:bg-purple-500 text-white shadow-purple-900/20'
+                                                : 'bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700 shadow-none'
+                                            }`}
                                     >
-                                        🚀 Launch Market
+                                        {withinLimit ? '🚀 Launch Market' : '⏳ Daily Limit Active'}
                                     </button>
                                 </form>
                             )}

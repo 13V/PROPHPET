@@ -86,8 +86,40 @@ export default function Home() {
         const { fetchDailyMarkets } = await import('@/services/polymarket');
         const dailyMarkets = await fetchDailyMarkets(50);
 
+        // Fetch Global On-Chain Markets
+        const { getProgram } = await import('@/services/web3');
+        let onChainMarkets: any[] = [];
+
+        try {
+          // Use a dummy wallet for read-only program access
+          const dummyWallet = { publicKey: null, signTransaction: undefined, sendTransaction: undefined };
+          const program = getProgram(dummyWallet);
+          if (program) {
+            const accounts = await program.account.market.all();
+            onChainMarkets = accounts.map(acc => {
+              const m = acc.account;
+              return {
+                id: m.marketId.toNumber(),
+                question: m.question,
+                endTime: m.endTime.toNumber(),
+                category: 'CRYPTO', // Default
+                outcomes: m.outcomeNames.filter((n: string) => n !== ""),
+                totals: m.totals.map((t: any) => t.toNumber()),
+                totalLiquidity: m.totalLiquidity.toNumber(),
+                resolved: m.resolved,
+                winningOutcome: m.winningOutcome,
+                polymarketId: m.polymarketId || null,
+                isHot: m.totalLiquidity.toNumber() > 100000
+              };
+            });
+            console.log(`Fetched ${onChainMarkets.length} global markets from chain`);
+          }
+        } catch (onChainErr) {
+          console.warn("Failed to fetch on-chain markets:", onChainErr);
+        }
+
         const userMarkets = getUserMarkets();
-        const mergedList = [...userMarkets, ...dailyMarkets].map(m => {
+        const mergedList = [...userMarkets, ...onChainMarkets, ...dailyMarkets].map(m => {
           const res = getResolutionStatus(m.id);
           if (res) {
             return {
@@ -101,8 +133,11 @@ export default function Home() {
           return m;
         });
 
-        setPredictions(mergedList);
-        setFetchError(mergedList.length === 0 ? "No markets found." : false);
+        // Unique filter by id to prevent duplicates
+        const unique = mergedList.filter((v, i, a) => a.findIndex(t => t.id === v.id) === i);
+
+        setPredictions(unique);
+        setFetchError(unique.length === 0 ? "No markets found." : false);
       } catch (e) {
         console.error("Fetch Error:", e);
         setFetchError(e instanceof Error ? e.message : "Network error");

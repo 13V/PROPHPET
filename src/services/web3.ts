@@ -65,3 +65,11 @@ export const getVotePDA = async (market: PublicKey, user: PublicKey) => {
         PROGRAM_ID
     );
 };
+
+export const getConfigPDA = async () => {
+    const [config] = await PublicKey.findProgramAddress(
+        [Buffer.from("config")],
+        PROGRAM_ID
+    );
+    return config;
+};
