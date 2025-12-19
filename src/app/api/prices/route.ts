@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 const SYMBOL_TO_BINANCE: Record<string, string> = {
     'BTC': 'BTCUSDT',
@@ -6,43 +6,73 @@ const SYMBOL_TO_BINANCE: Record<string, string> = {
     'SOL': 'SOLUSDT',
 };
 
-export async function GET(request: Request) {
-    const { searchParams } = new URL(request.url);
-    const symbol = searchParams.get('symbol');
+const SYMBOL_TO_KRAKEN: Record<string, string> = {
+    'BTC': 'XBTUSD',
+    'ETH': 'ETHUSD',
+    'SOL': 'SOLUSD',
+};
+
+export async function GET(request: NextRequest) {
+    const symbol = request.nextUrl.searchParams.get('symbol');
 
     if (!symbol) {
         return NextResponse.json({ error: 'Symbol required' }, { status: 400 });
     }
 
-    const pair = SYMBOL_TO_BINANCE[symbol.toUpperCase()];
-    if (!pair) {
-        return NextResponse.json({ error: 'Invalid symbol' }, { status: 400 });
+    const s = symbol.toUpperCase();
+    const binancePair = SYMBOL_TO_BINANCE[s];
+
+    // Default empty
+    let sparkline: number[] = [];
+    let openPrice: number | null = null;
+
+    // 1. Try Binance
+    if (binancePair) {
+        try {
+            const url = `https://api.binance.com/api/v3/klines?symbol=${binancePair}&interval=1h&limit=24`;
+            const res = await fetch(url, { next: { revalidate: 30 } }); // 30s cache
+
+            if (res.ok) {
+                const data = await res.json();
+                if (Array.isArray(data) && data.length > 0) {
+                    sparkline = data.map((c: any[]) => parseFloat(c[4])); // Close prices
+                    openPrice = parseFloat(data[0][1]); // Open of the first candle (24h ago)
+                    return NextResponse.json({ sparkline, openPrice });
+                }
+            }
+        } catch (e) {
+            console.error('Binance Proxy Error:', e);
+        }
     }
 
-    try {
-        // Binance Public API: 1h intervals, 24 candles = 24h history
-        const url = `https://api.binance.com/api/v3/klines?symbol=${pair}&interval=1h&limit=24`;
+    // 2. Fallback to Kraken
+    const krakenPair = SYMBOL_TO_KRAKEN[s];
+    if (krakenPair) {
+        try {
+            // Kraken API: interval=60 (1h)
+            const url = `https://api.kraken.com/0/public/OHLC?pair=${krakenPair}&interval=60`;
+            const res = await fetch(url, { next: { revalidate: 30 } });
 
-        const res = await fetch(url, { next: { revalidate: 60 } }); // Cache for 1 min
-        if (!res.ok) {
-            throw new Error(`Binance API Error: ${res.status}`);
+            if (res.ok) {
+                const json = await res.json();
+                // Kraken returns { result: { PairName: [ [time, open, high, low, close, ...], ... ] } }
+                const keys = Object.keys(json.result);
+                if (keys.length > 0) {
+                    const candles = json.result[keys[0]];
+                    // Get last 24 candles
+                    const recent = candles.slice(-24);
+
+                    if (Array.isArray(recent) && recent.length > 0) {
+                        sparkline = recent.map((c: any[]) => parseFloat(c[4])); // Close
+                        openPrice = parseFloat(recent[0][1]); // Open of first in series
+                        return NextResponse.json({ sparkline, openPrice });
+                    }
+                }
+            }
+        } catch (e) {
+            console.error('Kraken Proxy Error:', e);
         }
-
-        const data = await res.json();
-
-        // Return raw data to keep the client logic flexible, or process it here.
-        // Let's process it to ensure the client gets exactly what `getCoinGeckoSparkline` expects.
-        if (!Array.isArray(data) || data.length === 0) {
-            return NextResponse.json({ sparkline: [], openPrice: null });
-        }
-
-        const sparkline = data.map((candle: any[]) => parseFloat(candle[4]));
-        const openPrice = parseFloat(data[0][1]);
-
-        return NextResponse.json({ sparkline, openPrice });
-
-    } catch (error) {
-        console.error('Proxy Error:', error);
-        return NextResponse.json({ sparkline: [], openPrice: null }, { status: 500 });
     }
+
+    return NextResponse.json({ sparkline: [], openPrice: null }, { status: 500 });
 }
