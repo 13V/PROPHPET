@@ -129,6 +129,12 @@ export const PredictionCard = ({
                 const dMatch = d.match(/(above|at)\s+(\$\d+(\.\d+)?k?|\d{2,})/i);
                 if (dMatch) return `${asset} above or under ${dMatch[2]}${timeStr}?`;
             }
+
+            // ULTIMATE FALLBACK: For "Up or Down" markets with no target, it's usually "Close > Open"
+            // Render as: "Bitcoin > Open Price?"
+            if (!priceTarget) {
+                return `${asset} > Open Price${timeStr}?`;
+            }
         }
 
         return question;
@@ -348,12 +354,6 @@ export const PredictionCard = ({
                     <h3 className={`font-outfit font-bold text-lg leading-tight transition-colors ${resolved ? 'text-gray-400' : 'text-white'}`}>
                         {displayTitle}
                     </h3>
-                    {/* DEBUG OVERLAY - Temporary for identifying extraction issues */}
-                    <div className="mt-1 flex flex-col gap-1 text-[8px] font-mono text-gray-600 uppercase break-all leading-tight bg-white/5 p-1 rounded">
-                        <span>DESC: {description?.slice(0, 100) || 'NONE'}</span>
-                        <span>SLUG: {slug?.slice(0, 50) || 'NONE'}</span>
-                        <span>TARGET: {priceTarget || 'FAILED'}</span>
-                    </div>
                 </div>
                 <div className="flex flex-col items-end gap-2 shrink-0">
                     <div className="w-14 h-8 opacity-60 group-hover:opacity-100 transition-all duration-500">
@@ -377,18 +377,20 @@ export const PredictionCard = ({
             </div>
 
             {/* Info Bar */}
-            {!resolved && (
-                <div className="flex items-center gap-4 text-[11px] font-bold text-gray-500 tracking-wide z-10">
-                    <div className="flex items-center gap-1.5">
-                        <Clock size={12} className={isExpired ? 'text-red-500' : theme.text} />
-                        <span className={isExpired ? 'text-red-500' : ''}>{timeLeft()}</span>
+            {
+                !resolved && (
+                    <div className="flex items-center gap-4 text-[11px] font-bold text-gray-500 tracking-wide z-10">
+                        <div className="flex items-center gap-1.5">
+                            <Clock size={12} className={isExpired ? 'text-red-500' : theme.text} />
+                            <span className={isExpired ? 'text-red-500' : ''}>{timeLeft()}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                            <BarChart3 size={12} className="text-blue-500" />
+                            <span>${totalLiquidity.toLocaleString()} VOL</span>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                        <BarChart3 size={12} className="text-blue-500" />
-                        <span>${totalLiquidity.toLocaleString()} VOL</span>
-                    </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Outcomes */}
             <div className="flex flex-col gap-2 relative">
@@ -505,12 +507,14 @@ export const PredictionCard = ({
             </AnimatePresence>
 
             {/* Footer / Status */}
-            {resolved && (
-                <div className="pt-2 border-t border-white/5 flex justify-between items-center">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase">Resolved</span>
-                    <button onClick={(e) => { e.stopPropagation(); /* claim logic */ }} className="text-[10px] font-bold text-green-400 hover:underline">Claim Winnings</button>
-                </div>
-            )}
-        </motion.div>
+            {
+                resolved && (
+                    <div className="pt-2 border-t border-white/5 flex justify-between items-center">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase">Resolved</span>
+                        <button onClick={(e) => { e.stopPropagation(); /* claim logic */ }} className="text-[10px] font-bold text-green-400 hover:underline">Claim Winnings</button>
+                    </div>
+                )
+            }
+        </motion.div >
     );
 };
