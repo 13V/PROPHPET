@@ -15,7 +15,7 @@ interface CreateMarketModalProps {
     onClose: () => void;
 }
 
-const CREATION_THRESHOLD = 100000; // 100k PROPHET to create
+const CREATION_THRESHOLD = 5000000; // 5M PROPHET to create
 
 export const CreateMarketModal = ({ isOpen, onClose }: CreateMarketModalProps) => {
     const { publicKey } = useWallet();
@@ -308,8 +308,8 @@ export const CreateMarketModal = ({ isOpen, onClose }: CreateMarketModalProps) =
                                         type="submit"
                                         disabled={!withinLimit}
                                         className={`w-full font-bold py-4 rounded-xl shadow-lg transition-all mt-4 ${withinLimit
-                                                ? 'bg-purple-600 hover:bg-purple-500 text-white shadow-purple-900/20'
-                                                : 'bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700 shadow-none'
+                                            ? 'bg-purple-600 hover:bg-purple-500 text-white shadow-purple-900/20'
+                                            : 'bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700 shadow-none'
                                             }`}
                                     >
                                         {withinLimit ? '🚀 Launch Market' : '⏳ Daily Limit Active'}
