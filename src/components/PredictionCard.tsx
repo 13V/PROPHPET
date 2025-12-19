@@ -85,6 +85,36 @@ export const PredictionCard = ({
 
     const priceTarget = findTarget();
 
+    // Title Reconstruction Logic
+    const reconstructTitle = () => {
+        if (!isCrypto) return question;
+
+        const q = question.toLowerCase();
+        const s = slug?.toLowerCase() || '';
+        const e = eventTitle?.toLowerCase() || '';
+        const full = `${q} ${s} ${e}`;
+
+        // 1. Detect "Up or Down" pattern
+        if (q.includes('up or down')) {
+            let asset = 'Asset';
+            if (full.includes('bitcoin') || full.includes('btc')) asset = 'Bitcoin';
+            else if (full.includes('ethereum') || full.includes('eth')) asset = 'Ethereum';
+            else if (full.includes('solana') || full.includes('sol')) asset = 'Solana';
+
+            // Extract Time (e.g. 9PM, 10:00AM, December 19)
+            const timeMatch = question.match(/(\d{1,2}(:\d{2})?\s*(AM|PM))|(December|January|February|March|April|May|June|July|August|September|October|November)\s+\d{1,2}/i);
+            const timeStr = timeMatch ? ` by ${timeMatch[0]}` : '';
+
+            if (priceTarget) {
+                return `${asset} above or under ${priceTarget}${timeStr}?`;
+            }
+        }
+
+        return question;
+    };
+
+    const displayTitle = reconstructTitle();
+
     // UNIVERSAL PROBE: Log all props once per ID to see what Polymarket is sending
     useEffect(() => {
         console.log(
@@ -102,11 +132,11 @@ export const PredictionCard = ({
     useEffect(() => {
         if (isCrypto) {
             console.log(
-                `%c[Card ${id}] Init: "${question}" | Target: ${priceTarget}`,
+                `%c[Card ${id}] Init: "${question}" | Target: ${priceTarget} | Display: ${displayTitle}`,
                 'background: #7c3aed; color: white; font-weight: bold; padding: 2px 5px; border-radius: 3px;'
             );
         }
-    }, [isCrypto, question, priceTarget, id]);
+    }, [isCrypto, question, priceTarget, id, displayTitle]);
 
     // Lifecycle Logic
     const isExpired = Date.now() > endTime * 1000;
@@ -307,7 +337,7 @@ export const PredictionCard = ({
                         </span>}
                     </div>
                     <h3 className={`font-outfit font-bold text-lg leading-tight transition-colors ${resolved ? 'text-gray-400' : 'text-white'}`}>
-                        {question}
+                        {displayTitle}
                     </h3>
                 </div>
                 <div className="flex flex-col items-end gap-2 shrink-0">
