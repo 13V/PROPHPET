@@ -339,9 +339,9 @@ export async function fetchDailyMarkets(requiredCount = 20): Promise<any[]> {
                 if (!item.endTime) continue;
                 const hoursLeft = (item.endTime * 1000 - Date.now()) / (1000 * 60 * 60);
 
-                // Allow up to 72h (3 days) to ensure we fill the slots, but prioritize < 24h
+                // Allow up to 24h (1 day) to ensure we fill the slots, but prioritize < 24h
                 if (hoursLeft <= 0) continue; // Ended
-                if (hoursLeft > 72) continue; // Too far out (not "daily")
+                if (hoursLeft > 24) continue; // Too far out (not "daily")
 
                 seenIds.add(item.id);
                 collected.push(item);
