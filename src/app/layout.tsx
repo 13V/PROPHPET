@@ -12,6 +12,27 @@ export const metadata: Metadata = {
   description: "The premier multi-outcome prediction protocol. Stake $PROPHET, predict events, and prove your foresight.",
   keywords: ["prediction market", "prophet protocol", "solana", "betting", "crypto"],
   manifest: "/manifest.json",
+  openGraph: {
+    title: "PROPHET | The Future is Prediction",
+    description: "The premier multi-outcome prediction protocol on Solana.",
+    url: "https://prophetprotocol.fun",
+    siteName: "Prophet",
+    images: [
+      {
+        url: "/icons/icon-512x512.png",
+        width: 512,
+        height: 512,
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "PROPHET | The Future is Prediction",
+    description: "Stake $PROPHET, predict events, and prove your foresight. Live on Solana.",
+    images: ["/icons/icon-512x512.png"],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

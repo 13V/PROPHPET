@@ -497,9 +497,34 @@ export default function Home() {
         </div>
 
         {/* Footer Placeholder for simplicity, restore fully later if needed */}
-        <div className="border-t border-gray-800 bg-gray-950 py-12 text-center">
-          <div className="max-w-7xl mx-auto px-6">
-            <p className="text-gray-400">PROPHET PROTOCOL © 2025</p>
+        <div className="border-t border-gray-800 bg-gray-950 py-16 text-center relative overflow-hidden">
+          <div className="absolute inset-0 bg-purple-500/5 [mask-image:radial-gradient(circle_at_center,white,transparent)] pointer-events-none" />
+
+          <div className="max-w-7xl mx-auto px-6 relative z-10">
+            <div className="flex flex-col items-center gap-6">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-full text-[10px] font-mono group">
+                <span className="text-gray-500 uppercase">Contract:</span>
+                <span className="text-gray-300">{CONTRACT_ADDRESS}</span>
+                <button onClick={copyToClipboard} className="text-purple-500 hover:text-purple-400 transition-colors ml-1 p-1">
+                  {copied ? <Check size={12} /> : <Copy size={12} />}
+                </button>
+              </div>
+
+              <div className="space-y-4 max-w-2xl px-4">
+                <p className="text-gray-400 text-xs font-medium uppercase tracking-[0.2em]">Prophet Protocol © 2025</p>
+                <p className="text-gray-600 text-[10px] leading-relaxed italic">
+                  Prophet is a decentralized prediction protocol in Beta. All participation is at your own risk.
+                  Digital assets are highly volatile. This is not financial advice.
+                  Be the Prophet, or be the exit liquidity.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-8 mt-4">
+                <a href={`https://pump.fun/${CONTRACT_ADDRESS}`} target="_blank" rel="noopener" className="text-xs font-black text-gray-500 hover:text-purple-400 transition-colors uppercase tracking-widest">Pump.fun</a>
+                <a href="#" className="text-xs font-black text-gray-500 hover:text-blue-400 transition-colors uppercase tracking-widest">Twitter (X)</a>
+                <a href="#" className="text-xs font-black text-gray-500 hover:text-white transition-colors uppercase tracking-widest">Docs</a>
+              </div>
+            </div>
           </div>
         </div>
       </div>
