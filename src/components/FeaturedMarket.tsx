@@ -167,9 +167,9 @@ export const FeaturedMarket = ({ data, onOpenCreateModal, onOpenExpanded }: Feat
                     authority: publicKey,
                     vaultTokenAccount: vaultTokenAcc,
                     mint: BETTING_MINT,
-                    systemProgram: '11111111111111111111111111111111',
-                    tokenProgram: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
-                    rent: 'SysvarRent11111111111111111111111111111111'
+                    systemProgram: new PublicKey('11111111111111111111111111111111'),
+                    tokenProgram: new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'),
+                    rent: new PublicKey('SysvarRent11111111111111111111111111111111')
                 }).rpc();
 
                 toast.success("Market Initialized!", { id: toastId });
