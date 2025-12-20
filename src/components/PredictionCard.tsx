@@ -52,7 +52,7 @@ export const PredictionCard = ({
     onOpenExpanded,
     onSettle
 }: PredictionCardProps) => {
-    const { publicKey, connected } = useWallet();
+    const { publicKey, connected, signTransaction, signAllTransactions } = useWallet();
     const toast = useToast();
     const { trigger: haptic } = useHaptic();
 
@@ -302,7 +302,7 @@ export const PredictionCard = ({
                 const { BN } = await import('@project-serum/anchor');
                 const { SystemProgram, SYSVAR_RENT_PUBKEY } = await import('@solana/web3.js');
 
-                const program = getProgram({ publicKey, signTransaction: undefined, sendTransaction: undefined });
+                const program = getProgram({ publicKey, signTransaction, signAllTransactions });
                 if (!program) throw new Error("Wallet not connected");
 
                 // Generate a new ID (Timestamp based)

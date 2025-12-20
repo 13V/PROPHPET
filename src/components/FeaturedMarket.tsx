@@ -20,7 +20,7 @@ interface FeaturedMarketProps {
 }
 
 export const FeaturedMarket = ({ data, onOpenCreateModal, onOpenExpanded }: FeaturedMarketProps) => {
-    const { publicKey, connected } = useWallet();
+    const { publicKey, connected, signTransaction, signAllTransactions } = useWallet();
     const toast = useToast();
     const { trigger: haptic } = useHaptic(); // Use haptic hook
 
@@ -143,7 +143,7 @@ export const FeaturedMarket = ({ data, onOpenCreateModal, onOpenExpanded }: Feat
                 const { getProgram, getMarketPDA, getConfigPDA, getATA, BETTING_MINT, TOKEN_PROGRAM_ID } = await import('@/services/web3');
                 const { BN } = await import('@project-serum/anchor');
 
-                const program = getProgram({ publicKey, signTransaction: undefined, sendTransaction: undefined });
+                const program = getProgram({ publicKey, signTransaction, signAllTransactions });
                 if (!program) throw new Error("Wallet not connected");
 
                 const newMarketId = Date.now();

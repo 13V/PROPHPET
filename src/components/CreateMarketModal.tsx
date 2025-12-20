@@ -19,7 +19,7 @@ interface CreateMarketModalProps {
 const CREATION_THRESHOLD = 5000000; // 5M POLYBET to create
 
 export const CreateMarketModal = ({ isOpen, onClose }: CreateMarketModalProps) => {
-    const { publicKey } = useWallet();
+    const { publicKey, signTransaction, signAllTransactions } = useWallet();
     const [balance, setBalance] = useState<number | null>(null);
     const [eligible, setEligible] = useState(false);
     const [withinLimit, setWithinLimit] = useState(true);
@@ -116,7 +116,7 @@ export const CreateMarketModal = ({ isOpen, onClose }: CreateMarketModalProps) =
 
         setIsLoading(true);
         try {
-            const program = getProgram({ publicKey, signTransaction: undefined, sendTransaction: undefined });
+            const program = getProgram({ publicKey, signTransaction, signAllTransactions });
             if (!program) throw new Error("Wallet not connected");
 
             const marketId = new BN(Date.now());
