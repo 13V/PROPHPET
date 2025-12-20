@@ -151,6 +151,18 @@ export const FeaturedMarket = ({ data, onOpenCreateModal, onOpenExpanded }: Feat
                 const configPda = await getConfigPDA();
                 const vaultTokenAcc = await getATA(marketPda, BETTING_MINT);
 
+                console.log("DEBUG INIT:", {
+                    marketPda: marketPda?.toString(),
+                    configPda: configPda?.toString(),
+                    vaultTokenAcc: vaultTokenAcc?.toString(),
+                    mint: BETTING_MINT?.toString(),
+                    authority: publicKey?.toString()
+                });
+
+                if (!marketPda || !configPda || !vaultTokenAcc || !BETTING_MINT || !publicKey) {
+                    throw new Error("Missing critical keys for initialization");
+                }
+
                 await program.methods.initializeMarket(
                     new BN(newMarketId),
                     new BN(endTime),
