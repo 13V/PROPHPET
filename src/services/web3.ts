@@ -25,12 +25,7 @@ export const getATA = async (owner: PublicKey, mint: PublicKey) => {
     );
     return ata;
 };
-const [ata] = await PublicKey.findProgramAddress(
-    [owner.toBuffer(), TOKEN_PROGRAM_ID.toBuffer(), mint.toBuffer()],
-    SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID
-);
-return ata;
-};
+
 
 export const getProvider = (wallet: any) => {
     if (!wallet) return null;
