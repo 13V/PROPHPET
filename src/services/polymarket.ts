@@ -22,14 +22,14 @@ export interface PolymarketEvent {
 // Use internal API to bypass CORS
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-export async function fetchPolymarketTrending(limit = 50, offset = 0, sortBy = 'liquidity', ascending = false, tag?: string) {
+export async function fetchPolymarketTrending(limit = 50, offset = 0, sortBy = 'liquidity', ascending = false, tag?: string, active = true, closed = false) {
     const maxRetries = 3;
     let attempt = 0;
 
     while (attempt < maxRetries) {
         try {
             // STRATEGY: Client-Side Fetch via Public CORS Proxy
-            let gammaUrl = `https://gamma-api.polymarket.com/events?active=true&closed=false&order=${sortBy}&ascending=${ascending}&limit=${limit}&offset=${offset}`;
+            let gammaUrl = `https://gamma-api.polymarket.com/events?active=${active}&closed=${closed}&order=${sortBy}&ascending=${ascending}&limit=${limit}&offset=${offset}`;
             if (tag) {
                 gammaUrl += `&tag_slug=${tag}`;
             }

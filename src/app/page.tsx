@@ -223,6 +223,36 @@ export default function Home() {
     loadBackgroundData();
   }, []);
 
+  // Fetch Resolved Markets on Demand
+  useEffect(() => {
+    if (activeCategory === 'resolved') {
+      const fetchResolved = async () => {
+        setIsLoading(true);
+        try {
+          const { fetchPolymarketTrending } = await import('@/services/polymarket');
+          // Fetch CLOSED markets
+          const resolvedMarkets = await fetchPolymarketTrending(50, 0, 'volume', false, undefined, false, true);
+
+          setPredictions(prev => {
+            const existingIds = new Set(prev.map(p => p.id));
+            const newUnique = resolvedMarkets.filter((m: any) => !existingIds.has(m.id));
+
+            if (newUnique.length === 0) return prev;
+
+            // Add resolved flag explicitely just in case
+            const markedResolved = newUnique.map((m: any) => ({ ...m, resolved: true, status: 'resolved' }));
+            return [...prev, ...markedResolved];
+          });
+        } catch (e) {
+          console.error("Failed to fetch resolved:", e);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      fetchResolved();
+    }
+  }, [activeCategory]);
+
   const copyToClipboard = () => {
     navigator.clipboard.writeText(CONTRACT_ADDRESS);
     setCopied(true);
