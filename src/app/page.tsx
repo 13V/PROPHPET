@@ -16,6 +16,7 @@ import { Background } from "@/components/Background";
 import { MarketWarRoom } from "@/components/MarketWarRoom";
 import { TraderDashboard } from "@/components/TraderDashboard";
 import { useWallet } from '@solana/wallet-adapter-react';
+import { PolybetLogo } from "@/components/PolybetLogo";
 
 import { fetchPolymarketTrending, fetchMarketResult } from '@/services/polymarket';
 import { generateSyntheticMarkets } from '@/data/synthetic';
@@ -307,7 +308,7 @@ export default function Home() {
         <div className="sticky top-0 z-50 border-b border-gray-800 bg-gray-950/80 backdrop-blur-xl">
           <div className="mx-auto flex max-w-7xl items-center justify-between px-4 md:px-6 py-3 md:py-4">
             <div className="flex items-center gap-2 md:gap-3">
-              <Sparkles className="h-6 w-6 md:h-8 md:w-8 text-purple-500" />
+              <PolybetLogo className="h-6 w-6 md:h-8 md:w-8" />
               <h1 className="text-lg md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600">
                 Polybet
               </h1>
