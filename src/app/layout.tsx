@@ -19,9 +19,10 @@ export const metadata: Metadata = {
     siteName: "Polybet",
     images: [
       {
-        url: "/icons/icon-512x512.png",
-        width: 512,
-        height: 512,
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Polybet - The Future is Prediction",
       },
     ],
     locale: "en_US",
@@ -31,7 +32,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Polybet | The Future is Prediction",
     description: "Stake $POLYBET, predict events, and prove your foresight. Live on Solana.",
-    images: ["/icons/icon-512x512.png"],
+    images: ["/og-image.png"],
   },
   appleWebApp: {
     capable: true,
