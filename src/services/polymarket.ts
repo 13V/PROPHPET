@@ -153,7 +153,7 @@ export async function fetchPolymarketTrending(limit = 50, offset = 0, sortBy = '
                 return {
                     id: parseInt(market.id) || parseInt(event.id) || Math.random() * 100000,
                     question: market.question || event.title,
-                    category: classifyCategory(event.slug),
+                    category: classifyCategory(event.slug, market.question || event.title),
                     endTime: Math.floor(new Date(market.endDate).getTime() / 1000),
                     outcomes: outcomes,
                     totals: [yesVotes, noVotes, ...new Array(outcomes.length - 2).fill(0)], // Mocking totals for multi-outcome demo
@@ -238,24 +238,48 @@ export async function refreshMarketBatch(ids: number[]): Promise<any[]> {
     }).filter(item => item !== null);
 }
 
-function classifyCategory(slug: string): 'CRYPTO' | 'POLITICS' | 'SPORTS' | 'NEWS' | 'ESPORTS' {
-    const s = slug.toLowerCase();
+function classifyCategory(slug: string, question: string = ""): 'CRYPTO' | 'POLITICS' | 'SPORTS' | 'NEWS' | 'ESPORTS' {
+    const s = (slug + " " + question).toLowerCase();
 
     // 0. Esports (Specific games & terms)
-    if (s.includes('valorant') || s.includes('lol') || s.includes('league') || s.includes('counter-strike') || s.includes('csgo') || s.includes('dota') || s.includes('esports') || s.includes('iem') || s.includes('blast') || s.includes('pgl') || s.includes('vct') || s.includes('major') || s.includes('pro league')) return 'ESPORTS';
+    if (s.includes('valorant') || s.includes('lol') || s.includes('league of legends') || s.includes('counter-strike') || s.includes('csgo') || s.includes('cs2') || s.includes('dota') || s.includes('esports') || s.includes('iem') || s.includes('blast') || s.includes('pgl') || s.includes('vct') || s.includes('major') || s.includes('pro league')) return 'ESPORTS';
 
-    // 1. Politics (Highest Priority - Specific Names & Terms)
+    // 1. Politics (Highest Priority)
     if (s.includes('trump') || s.includes('biden') || s.includes('harris') || s.includes('election') || s.includes('republican') || s.includes('democrat') || s.includes('senate') || s.includes('house') || s.includes('president') || s.includes('nominee') || s.includes('cabinet') || s.includes('confirm') || s.includes('vote') || s.includes('policy') || s.includes('poll') || s.includes('approval') || s.includes('regulation') || s.includes('law') || s.includes('court') || s.includes('supreme') || s.includes('congress') || s.includes('parliament') || s.includes('minister') || s.includes('war') || s.includes('israel') || s.includes('ukraine') || s.includes('china') || s.includes('nato') || s.includes('un ') || s.includes('musk') || s.includes('rfk') || s.includes('vivek')) return 'POLITICS';
 
-    // 2. Sports (Clubs, Leagues, Action words)
-    if (s.includes('nfl') || s.includes('nba') || s.includes('soccer') || s.includes('league') || s.includes('cup') || s.includes('sport') ||
-        s.includes('fight') || s.includes('boxing') || s.includes('ufc') || s.includes('mma') || s.includes('formula') || s.includes('f1') ||
-        s.includes('champion') || s.includes('winner') || s.includes('score') || s.includes('vs') || s.includes('fc') || s.includes('united') ||
-        s.includes('real madrid') || s.includes('barcelona') || s.includes('liverpool') || s.includes('city') || s.includes('chelsea') ||
-        s.includes('arsenal') || s.includes('goal') || s.includes('points') || s.includes('touchdown') || s.includes('over/under') ||
-        s.includes('handicap') || s.includes('athletic') || s.includes('inter') || s.includes('ac ') || s.includes('game') || s.includes('match') ||
-        s.includes('win') || s.includes('lose') || s.includes('draw') || s.includes('club') || s.includes('racing') || s.includes('knicks') ||
-        s.includes('lakers') || s.includes('warriors') || s.includes('celtics') || s.includes('yankees') || s.includes('dodgers') || s.includes('wanderers')) return 'SPORTS';
+    // 2. Sports (Deep Keyword Search)
+    if (
+        // Leagues & Generic
+        s.includes('nfl') || s.includes('nba') || s.includes('soccer') || s.includes('league') || s.includes('cup') || s.includes('sport') ||
+        s.includes('premier') || s.includes('bundesliga') || s.includes('liga') || s.includes('serie a') || s.includes('uefa') || s.includes('fifa') ||
+
+        // Action & Status
+        s.includes('champion') || s.includes('winner') || s.includes('score') || s.includes('vs') || s.includes('game') || s.includes('match') ||
+        s.includes('win') || s.includes('lose') || s.includes('draw') || s.includes('beat') || s.includes('points') || s.includes('touchdown') ||
+        s.includes('over/under') || s.includes('handicap') || s.includes('stats') || s.includes('record') ||
+
+        // Combat
+        s.includes('fight') || s.includes('boxing') || s.includes('ufc') || s.includes('mma') || s.includes('paul') || s.includes('tyson') ||
+
+        // Racing
+        s.includes('formula') || s.includes('f1') || s.includes('racing') || s.includes('prix') ||
+
+        // Football/Soccer Terms
+        s.includes('fc') || s.includes('united') || s.includes('city') || s.includes('real') || s.includes('club') || s.includes('athletic') ||
+        s.includes('inter') || s.includes('ac ') || s.includes('spurs') || s.includes('arsenal') || s.includes('liverpool') || s.includes('chelsea') ||
+        s.includes('barcelona') || s.includes('madrid') || s.includes('bayern') || s.includes('psg') || s.includes('juventus') ||
+        s.includes('wanderers') || s.includes('villa') || s.includes('palace') || s.includes('everton') || s.includes('newcastle') ||
+        s.includes('forest') || s.includes('fulham') || s.includes('brighton') || s.includes('brentford') || s.includes('bournemouth') ||
+        s.includes('wolves') || s.includes('oviedo') || s.includes('celta') || s.includes('betis') || s.includes('sevilla') ||
+        s.includes('sociedad') || s.includes('villarreal') || s.includes('girona') || s.includes('valencia') ||
+
+        // NBA/NFL/MLB Teams (Common identifiers)
+        s.includes('knicks') || s.includes('lakers') || s.includes('warriors') || s.includes('celtics') || s.includes('bulls') || s.includes('heat') ||
+        s.includes('suns') || s.includes('bucks') || s.includes('sixers') || s.includes('nets') || s.includes('clippers') || s.includes('mavs') ||
+        s.includes('nuggets') || s.includes('thunder') || s.includes('timberwolves') || s.includes('kings') || s.includes('pacers') ||
+        s.includes('yankees') || s.includes('dodgers') || s.includes('red sox') || s.includes('giants') || s.includes('eagles') ||
+        s.includes('cowboys') || s.includes('chiefs') || s.includes('49ers') || s.includes('ravens') || s.includes('bills') || s.includes('lions')
+    ) return 'SPORTS';
 
     // 3. Crypto (Coins, Tokens, Finance)
     if (s.includes('bitcoin') || s.includes('ethereum') || s.includes('solana') || s.includes('crypto') || s.includes('token') || s.includes('price') || s.includes('coin') || s.includes('market') || s.includes('etf') || s.includes('btc') || s.includes('eth') || s.includes('sol') || s.includes('memecoin') || s.includes('pepe') || s.includes('doge') || s.includes('bonk') || s.includes('wif') || s.includes('fed ') || s.includes('rates') || s.includes('inflation')) return 'CRYPTO';
