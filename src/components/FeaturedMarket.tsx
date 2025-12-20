@@ -11,6 +11,7 @@ import { useToast } from '@/context/ToastContext';
 import { useHaptic } from '@/hooks/useHaptic';
 import { getPythSparkline, getPythPrices } from '@/services/pyth';
 import { getCoinGeckoSparkline } from '@/services/coingecko';
+import { PublicKey } from '@solana/web3.js';
 
 interface FeaturedMarketProps {
     data: any; // Using any for flexibility to match PredictionCard shape
