@@ -401,20 +401,18 @@ export const PredictionCard = ({
     const topOutcomes = showAllOutcomes ? sortedIndices : sortedIndices.slice(0, 2);
 
     return (
-        <motion.div
-            layout
+        <div
             onClick={onOpenExpanded}
-            className={`glass rounded-2xl p-4 md:p-5 flex flex-col gap-4 transition-all duration-500 relative overflow-hidden group border-white/5 hover:border-white/10 cursor-pointer ${isHot ? 'shadow-[0_0_20px_rgba(249,115,22,0.1)]' : ''
+            className={`terminal-card neo-shadow-sm p-4 md:p-5 flex flex-col gap-4 transition-all duration-200 relative overflow-hidden group hover:neo-shadow cursor-pointer ${isHot ? 'bg-orange-50/30' : 'bg-white'
                 } ${(isExpired && !resolved) ? 'grayscale opacity-80' : ''}`}
             style={{
-                boxShadow: resolved ? 'none' : `0 0 30px ${theme.glow}`,
-                borderBottom: resolved ? '1px solid rgba(255,255,255,0.05)' : `1px solid ${theme.color}20`
+                borderColor: resolved ? '#000000' : '#000000',
             }}
         >
             {/* Market Closed Banner */}
             {isExpired && !resolved && (
                 <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
-                    <div className="rotate-[-10deg] bg-red-500/20 text-red-500 border border-red-500/50 px-8 py-2 font-black text-2xl tracking-[0.3em] backdrop-blur-sm shadow-2xl">
+                    <div className="rotate-[-5deg] bg-black text-white px-8 py-2 font-black text-2xl tracking-[0.3em] shadow-xl">
                         CLOSED
                     </div>
                 </div>
@@ -422,61 +420,51 @@ export const PredictionCard = ({
 
             {/* Initializing Loading State */}
             {isInitializing && (
-                <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm">
-                    <div className="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-4" />
-                    <span className="text-sm font-bold text-white animate-pulse">Initializing Market...</span>
+                <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-white/90 backdrop-blur-sm">
+                    <div className="w-10 h-10 border-[3px] border-black border-t-transparent animate-spin mb-4" />
+                    <span className="text-sm font-bold text-black animate-pulse">SYNCING DATA...</span>
                 </div>
-            )}
-
-            {/* Theme Flare */}
-            {!resolved && (
-                <div
-                    className="absolute top-0 right-0 w-32 h-32 blur-[60px] opacity-20 pointer-events-none transition-opacity duration-500 group-hover:opacity-40"
-                    style={{ background: theme.color }}
-                />
             )}
 
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start gap-3 md:gap-4 z-10">
                 <div className="flex flex-col gap-1.5 flex-1 w-full">
                     <div className="flex items-center gap-2 flex-wrap">
-                        <span className={`text-[10px] font-bold uppercase tracking-widest ${resolved ? 'text-gray-500' : theme.text}`}>{displayCategory}</span>
+                        <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 border border-black ${resolved ? 'bg-gray-100 text-gray-500' : 'bg-black text-white'}`}>{displayCategory}</span>
 
-                        {/* Lazy Init Badge (Moved here to avoid overlap) */}
+                        {/* Lazy Init Badge */}
                         {polymarketId && !isOnChain && !resolved && (
-                            <span className="text-[8px] font-mono uppercase bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/10">
-                                INITIALIZE
+                            <span className="text-[10px] font-mono font-black uppercase bg-orange-500 text-white px-2 py-0.5 border border-black">
+                                NEW
                             </span>
                         )}
 
-                        {isHot && !resolved && <span className="text-[10px] font-bold text-orange-500 flex items-center gap-1">
-                            <span className="w-1 h-1 rounded-full bg-orange-500 animate-pulse" />
+                        {isHot && !resolved && <span className="text-[10px] font-black text-black flex items-center gap-1 bg-yellow-400 px-2 py-0.5 border border-black italic">
                             HOT
                         </span>}
-                        {resolved && <span className="text-[10px] font-bold text-green-500 flex items-center gap-1">
+                        {resolved && <span className="text-[10px] font-black text-white bg-green-600 px-2 py-0.5 border border-black flex items-center gap-1">
                             <CheckCircle2 size={10} />
                             RESOLVED
                         </span>}
                     </div>
-                    <h3 className={`font-outfit font-bold text-lg leading-tight transition-colors ${resolved ? 'text-gray-400' : 'text-white'}`}>
+                    <h3 className={`font-outfit font-black text-xl leading-tight transition-colors uppercase italic ${resolved ? 'text-gray-400' : 'text-black'}`}>
                         {displayTitle}
                     </h3>
                 </div>
-                <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-start w-full md:w-auto gap-4 md:gap-2 shrink-0 border-t md:border-t-0 border-white/5 pt-3 md:pt-0">
+                <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-start w-full md:w-auto gap-4 md:gap-2 shrink-0 border-t md:border-t-0 border-black/10 pt-3 md:pt-0">
                     <div className="w-14 h-8 opacity-60 group-hover:opacity-100 transition-all duration-500">
                         <Sparkline
                             data={pythData || getDeterministicPattern(id, outcomeProbabilities[0])}
                             width={56}
                             height={32}
-                            color={resolved ? '#4b5563' : theme.color}
+                            color={resolved ? '#4b5563' : '#000000'}
                         />
                     </div>
                     {isCrypto && (
                         <div className="flex flex-col items-end">
-                            <span className="text-[9px] text-gray-500 uppercase font-black tracking-tighter">Live Price</span>
-                            <span className="text-xs font-mono font-bold text-white flex items-center gap-1 bg-white/5 border border-white/10 px-2 py-0.5 rounded shadow-lg">
-                                <span className={`w-1.5 h-1.5 rounded-full ${pythPrice ? 'bg-green-500 animate-pulse' : 'bg-gray-600'} shadow-[0_0_8px_rgba(34,197,94,0.3)]`} />
-                                {pythPrice ? `$${pythPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '---'}
+                            <span className="text-[9px] text-gray-500 uppercase font-black tracking-tighter">Spot Oracle</span>
+                            <span className="text-xs font-mono font-black text-black flex items-center gap-1 bg-white border-2 border-black px-2 py-0.5 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                                {pythPrice ? `$${pythPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'OFFLINE'}
                             </span>
                         </div>
                     )}
@@ -486,97 +474,86 @@ export const PredictionCard = ({
             {/* Info Bar */}
             {
                 !resolved && (
-                    <div className="flex items-center gap-3 md:gap-4 text-[10px] md:text-[11px] font-bold text-gray-500 tracking-wide z-10">
+                    <div className="flex items-center gap-3 md:gap-4 text-[11px] font-black text-black z-10 border-b-2 border-black pb-2">
                         <div className="flex items-center gap-1.5">
-                            <Clock size={12} className={isExpired ? 'text-red-500' : theme.text} />
-                            <span className={isExpired ? 'text-red-500' : ''}>{timeLeft()}</span>
+                            <Clock size={12} className={isExpired ? 'text-red-500' : 'text-black'} />
+                            <span className={isExpired ? 'text-red-500' : ''}>{timeLeft()} REMAINING</span>
                         </div>
                         <div className="flex items-center gap-1.5">
-                            <BarChart3 size={12} className="text-blue-500" />
-                            <span>${totalLiquidity.toLocaleString()} VOL</span>
+                            <BarChart3 size={12} className="text-black" />
+                            <span>{totalLiquidity.toLocaleString()} $PREDICT</span>
                         </div>
                     </div>
                 )
             }
 
             {/* Outcomes */}
-            <div className="flex flex-col gap-2 relative">
-                <AnimatePresence mode="popLayout">
-                    {topOutcomes.map((idx) => (
-                        <motion.button
-                            key={idx}
-                            layout
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: 10 }}
-                            onClick={(e) => handleOutcomeClick(e, idx)}
-                            disabled={isExpired || resolved}
-                            className={`w-full group/btn relative h-12 rounded-xl border transition-all flex items-center justify-between px-4 overflow-hidden ${votedIndex === idx
-                                ? 'bg-purple-500/20 border-purple-500/50'
-                                : 'bg-white/5 border-white/5 hover:border-white/20'
-                                } ${resolved && winningOutcome !== idx ? 'opacity-40' : ''} ${isExpired && !resolved ? 'cursor-not-allowed' : ''}`}
-                        >
-                            <div className="absolute inset-0 bg-gray-900/40" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 relative">
+                {topOutcomes.map((idx) => (
+                    <button
+                        key={idx}
+                        onClick={(e) => handleOutcomeClick(e, idx)}
+                        disabled={isExpired || resolved}
+                        className={`w-full group/btn relative h-14 border-2 transition-all flex items-center justify-between px-4 ${votedIndex === idx
+                            ? 'bg-black text-white border-black neo-shadow-sm'
+                            : 'bg-white border-black neo-shadow-sm hover:translate-y-[-2px] hover:neo-shadow'
+                            } ${resolved && winningOutcome !== idx ? 'opacity-40 grayscale' : ''} ${isExpired && !resolved ? 'cursor-not-allowed' : ''}`}
+                    >
+                        {/* Probability Fill */}
+                        <div
+                            className={`absolute inset-0 opacity-10 ${votedIndex === idx ? 'bg-white' : 'bg-black'}`}
+                            style={{ width: `${outcomeProbabilities[idx]}%` }}
+                        />
 
-                            {/* Probability Fill */}
-                            <motion.div
-                                initial={{ width: 0 }}
-                                animate={{ width: `${outcomeProbabilities[idx]}%` }}
-                                className="absolute inset-0 opacity-20"
-                                style={{ background: resolved ? '#4b5563' : theme.color }}
-                            />
-
-                            <div className="relative z-10 flex justify-between items-center w-full">
-                                <div className="flex items-center gap-2">
-                                    {resolved && winningOutcome === idx && <Trophy size={14} className="text-amber-400" />}
-                                    <span className={`text-sm font-bold ${votedIndex === idx ? 'text-purple-400' : 'text-slate-200'}`}>
-                                        {outcomes[idx]}
-                                        {priceTarget && (
-                                            outcomes[idx].toLowerCase().includes('up') ||
-                                            outcomes[idx].toLowerCase().includes('down') ||
-                                            outcomes[idx].toLowerCase().includes('yes') ||
-                                            outcomes[idx].toLowerCase().includes('no')
-                                        ) && (
-                                                <span className="ml-1 text-[10px] text-gray-500 font-normal">
-                                                    {(outcomes[idx].toLowerCase().includes('up') || outcomes[idx].toLowerCase().includes('yes')) ? '>' : '<'} {priceTarget}
-                                                </span>
-                                            )}
-                                    </span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <span className="text-xs font-mono font-bold text-slate-400">
-                                        {outcomeProbabilities[idx].toFixed(0)}%
-                                    </span>
-                                    {!isExpired && !resolved && <ChevronRight size={14} className="text-slate-600 group-hover/btn:translate-x-1 transition-transform" />}
-                                </div>
+                        <div className="relative z-10 flex justify-between items-center w-full">
+                            <div className="flex items-center gap-2">
+                                {resolved && winningOutcome === idx && <Trophy size={14} className="text-yellow-400" />}
+                                <span className="text-sm font-black uppercase tracking-tight">
+                                    {outcomes[idx]}
+                                    {priceTarget && (
+                                        outcomes[idx].toLowerCase().includes('up') ||
+                                        outcomes[idx].toLowerCase().includes('down') ||
+                                        outcomes[idx].toLowerCase().includes('yes') ||
+                                        outcomes[idx].toLowerCase().includes('no')
+                                    ) && (
+                                            <span className="ml-1 text-[10px] font-normal opacity-60">
+                                                {(outcomes[idx].toLowerCase().includes('up') || outcomes[idx].toLowerCase().includes('yes')) ? '>' : '<'} {priceTarget}
+                                            </span>
+                                        )}
+                                </span>
                             </div>
-                        </motion.button>
-                    ))}
-                </AnimatePresence>
+                            <div className="flex items-center gap-2">
+                                <span className={`text-xs font-mono font-black ${votedIndex === idx ? 'text-white' : 'text-black'}`}>
+                                    {outcomeProbabilities[idx].toFixed(0)}%
+                                </span>
+                            </div>
+                        </div>
+                    </button>
+                ))}
 
                 {outcomes.length > 2 && !resolved && (
                     <button
                         onClick={(e) => { e.stopPropagation(); setShowAllOutcomes(!showAllOutcomes); }}
-                        className="text-[10px] font-bold text-slate-500 hover:text-slate-300 transition-colors py-1 self-center"
+                        className="text-[10px] font-black uppercase tracking-widest text-black hover:underline py-1 self-center col-span-full"
                     >
-                        {showAllOutcomes ? 'Show Less' : `+ ${outcomes.length - 2} More Outcomes`}
+                        {showAllOutcomes ? 'Show Less' : `+ [ ${outcomes.length - 2} ] MORE OUTCOMES`}
                     </button>
                 )}
             </div>
 
 
             {/* Bet Modal Overlay */}
-            <AnimatePresence>
+            <AnimatePresence mode="wait">
                 {betMode !== null && (
                     <motion.div
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 10 }}
-                        className="absolute inset-x-0 bottom-0 bg-slate-900 border-t border-white/10 p-5 flex flex-col gap-4 z-20 shadow-2xl"
+                        className="absolute inset-x-0 bottom-0 bg-white border-t-2 border-black p-5 flex flex-col gap-4 z-20"
                     >
                         <div className="flex justify-between items-center">
-                            <span className="text-xs font-bold text-slate-400 uppercase">Stake on {outcomes[betMode]}</span>
-                            <button onClick={(e) => { e.stopPropagation(); setBetMode(null); }} className="text-slate-500 hover:text-white">✕</button>
+                            <span className="text-xs font-black text-black uppercase tracking-tighter">Stake: {outcomes[betMode]}</span>
+                            <button onClick={(e) => { e.stopPropagation(); setBetMode(null); }} className="text-black font-black hover:scale-110">✕</button>
                         </div>
                         <div className="relative">
                             <input
@@ -585,11 +562,11 @@ export const PredictionCard = ({
                                 value={stakeAmount}
                                 onChange={(e) => setStakeAmount(e.target.value)}
                                 placeholder="0.00"
-                                className="w-full h-12 bg-white/5 border border-white/10 rounded-xl px-4 font-mono font-bold text-xl focus:border-purple-500 focus:outline-none transition-all"
+                                className="w-full h-14 bg-gray-50 border-2 border-black px-4 font-mono font-black text-2xl focus:bg-white focus:outline-none transition-all placeholder:text-gray-300"
                             />
                             <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-end">
-                                <span className="text-[10px] text-gray-500 font-bold uppercase">Max: 1M</span>
-                                <span className="text-xs font-bold text-slate-500">$POLYBET</span>
+                                <span className="text-[10px] text-gray-500 font-bold uppercase">MAX 1M</span>
+                                <span className="text-xs font-black text-black">$POLYBET</span>
                             </div>
                         </div>
                         <div className="grid grid-cols-4 gap-2">
@@ -597,7 +574,7 @@ export const PredictionCard = ({
                                 <button
                                     key={val}
                                     onClick={() => setStakeAmount(val.replace('k', '000'))}
-                                    className="h-8 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-bold text-slate-400 transition-colors"
+                                    className="h-8 border-2 border-black bg-white hover:bg-black hover:text-white text-[10px] font-black uppercase transition-colors"
                                 >
                                     {val}
                                 </button>
@@ -605,9 +582,9 @@ export const PredictionCard = ({
                         </div>
                         <button
                             onClick={(e) => { e.stopPropagation(); confirmBet(); }}
-                            className="w-full h-12 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 rounded-xl font-bold text-sm shadow-lg shadow-purple-500/20 active:scale-[0.98] transition-all"
+                            className="w-full h-14 bg-black text-white font-black uppercase tracking-widest text-sm neo-shadow-sm hover:translate-y-[-2px] hover:neo-shadow active:translate-y-[2px] active:neo-shadow-none transition-all"
                         >
-                            {isOnChain || !polymarketId ? 'Confirm Prediction' : 'Initialize & Predict'}
+                            {isOnChain || !polymarketId ? 'CONFIRM FORECAST' : 'INITIALIZE & PREDICT'}
                         </button>
                     </motion.div>
                 )}
@@ -616,12 +593,12 @@ export const PredictionCard = ({
             {/* Footer / Status */}
             {
                 resolved && (
-                    <div className="pt-2 border-t border-white/5 flex justify-between items-center">
-                        <span className="text-[10px] font-bold text-slate-500 uppercase">Resolved</span>
-                        <button onClick={(e) => { e.stopPropagation(); /* claim logic */ }} className="text-[10px] font-bold text-green-400 hover:underline">Claim Winnings</button>
+                    <div className="pt-2 border-t-2 border-black flex justify-between items-center">
+                        <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">ARCHIVED RECORD</span>
+                        <button onClick={(e) => { e.stopPropagation(); /* claim logic */ }} className="text-[10px] font-black text-green-600 hover:underline uppercase tracking-tighter">REDEEM WINNINGS</button>
                     </div>
                 )
             }
-        </motion.div >
+        </div>
     );
 };

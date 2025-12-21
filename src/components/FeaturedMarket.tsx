@@ -228,45 +228,41 @@ export const FeaturedMarket = ({ data, onOpenCreateModal, onOpenExpanded }: Feat
     const isExpired = Date.now() > endTime * 1000;
 
     return (
-        <div onClick={onOpenExpanded} className="relative group rounded-3xl overflow-hidden border border-white/5 shadow-2xl bg-[#0a0a0a] cursor-pointer">
-            {/* Backgrounds */}
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-900/20 via-black/0 to-black/0" />
-            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/5 blur-[120px] rounded-full pointer-events-none" />
-            <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.03]" />
+        <div onClick={onOpenExpanded} className="relative group overflow-hidden neo-border neo-shadow bg-white cursor-pointer">
+            {/* Background Dot Grid */}
+            <div className="absolute inset-0 dot-grid opacity-10" />
 
             <div className="relative grid lg:grid-cols-5">
                 {/* Left Content */}
-                <div className="lg:col-span-3 p-5 md:p-10 flex flex-col justify-between relative border-b lg:border-b-0 lg:border-r border-white/5 order-1">
+                <div className="lg:col-span-3 p-5 md:p-8 flex flex-col justify-between relative border-b lg:border-b-0 lg:border-r border-black order-1">
 
                     {/* Header Badges */}
                     <div className="flex items-center gap-3 mb-6">
-                        <span className="bg-white/5 border border-white/10 text-white text-[10px] font-bold px-2 py-1 rounded flex items-center gap-2 uppercase tracking-widest">
-                            <TrendingUp size={12} className="text-blue-400" /> Featured
+                        <span className="bg-black text-white text-[10px] font-black px-3 py-1 border border-black uppercase tracking-[0.2em]">
+                            MARKET_ALERT
                         </span>
                         {polymarketId && !isOnChain && (
-                            <span className="bg-blue-500/20 border border-blue-500/20 text-blue-400 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-widest animate-pulse">
-                                Initialize Me
+                            <span className="bg-orange-600 text-white text-[10px] font-black px-2 py-1 border border-black uppercase tracking-widest animate-pulse">
+                                UNINITIALIZED
                             </span>
                         )}
-                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
-                            {category} • {new Date(endTime * 1000).toLocaleDateString()}
+                        <span className="text-[10px] font-black text-black uppercase tracking-widest bg-yellow-400 px-2 py-1 border border-black italic">
+                            HOT_VOL_{totalLiquidity > 10000 ? 'HIGH' : 'LOW'}
                         </span>
                     </div>
 
                     {/* Main Title */}
-                    <h2 className="text-xl md:text-4xl font-black text-white mb-6 leading-tight tracking-tight max-w-2xl">
+                    <h2 className="text-2xl md:text-5xl font-black text-black mb-6 leading-[0.9] tracking-tighter max-w-2xl uppercase italic">
                         {displayTitle}
                     </h2>
 
                     {/* Stats Row */}
-                    {/* Stats Row */}
-                    <div className="flex flex-wrap items-center gap-4 md:gap-8 mb-8">
+                    <div className="flex flex-wrap items-center gap-4 md:gap-8 mb-8 border-t-2 border-black pt-6">
                         {/* Live Price */}
                         {pythPrice && (
                             <div className="flex flex-col">
-                                <span className="text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-1">Live Oracle</span>
-                                <span className="text-lg md:text-xl font-mono font-bold text-white flex items-center gap-2">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.5)]" />
+                                <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1 italic">Oracle_Feed</span>
+                                <span className="text-xl md:text-3xl font-mono font-black text-black flex items-center gap-2">
                                     ${pythPrice.toLocaleString()}
                                 </span>
                             </div>
@@ -274,28 +270,28 @@ export const FeaturedMarket = ({ data, onOpenCreateModal, onOpenExpanded }: Feat
 
                         {/* Vol */}
                         <div className="flex flex-col">
-                            <span className="text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-1">Volume</span>
-                            <span className="text-lg md:text-xl font-mono font-bold text-white text-blue-400">${totalLiquidity.toLocaleString()}</span>
+                            <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1 italic">Volume_PREDICT</span>
+                            <span className="text-xl md:text-3xl font-mono font-black text-black">${totalLiquidity.toLocaleString()}</span>
                         </div>
                     </div>
 
                     {/* Chart Area */}
-                    <div className="h-24 md:h-32 w-full relative overflow-hidden mask-linear-fade opacity-40">
-                        {pythData && <Sparkline data={pythData} width={600} height={128} color="#3b82f6" />}
+                    <div className="h-24 md:h-32 w-full relative overflow-hidden opacity-30">
+                        {pythData && <Sparkline data={pythData} width={600} height={128} color="#000000" />}
                     </div>
                 </div>
 
                 {/* Right Action Panel */}
-                <div className="lg:col-span-2 p-5 md:p-10 bg-white/[0.02] backdrop-blur-sm flex flex-col justify-center gap-6 order-2">
+                <div className="lg:col-span-2 p-5 md:p-8 bg-gray-50 flex flex-col justify-center gap-6 order-2">
                     {/* Order Book Bar */}
-                    <div className="space-y-2">
-                        <div className="flex justify-between text-[10px] font-bold text-gray-500 uppercase tracking-widest">
-                            <span>{outcomes[0]} {yesPercent.toFixed(0)}%</span>
-                            <span>{outcomes[1]} {noPercent.toFixed(0)}%</span>
+                    <div className="space-y-3">
+                        <div className="flex justify-between text-[11px] font-black text-black uppercase tracking-[0.1em]">
+                            <span>{outcomes[0]}: {yesPercent.toFixed(1)}%</span>
+                            <span>{outcomes[1]}: {noPercent.toFixed(1)}%</span>
                         </div>
-                        <div className="flex h-2 w-full rounded-full overflow-hidden bg-gray-800">
-                            <motion.div initial={{ width: 0 }} animate={{ width: `${yesPercent}%` }} className="h-full bg-green-500 shadow-[0_0_15px_rgba(34,197,94,0.4)]" />
-                            <div className="h-full flex-1 bg-red-500 shadow-[0_0_15px_rgba(239,68,68,0.4)]" />
+                        <div className="flex h-6 w-full border-2 border-black bg-white overflow-hidden p-[2px]">
+                            <motion.div initial={{ width: 0 }} animate={{ width: `${yesPercent}%` }} className="h-full bg-black" />
+                            <div className="h-full flex-1 bg-white" />
                         </div>
                     </div>
 
@@ -305,55 +301,60 @@ export const FeaturedMarket = ({ data, onOpenCreateModal, onOpenExpanded }: Feat
                             <button
                                 onClick={(e) => { e.stopPropagation(); setBetMode(0); }}
                                 disabled={isExpired}
-                                className="group p-4 bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 hover:border-green-500/40 rounded-xl transition-all active:scale-95"
+                                className="group p-4 bg-white border-2 border-black neo-shadow-sm hover:neo-shadow hover:translate-y-[-2px] transition-all"
                             >
-                                <span className="text-green-400 font-black text-xl md:text-2xl block mb-1 truncate">{outcomes[0]}</span>
-                                <span className="text-[10px] text-green-300 font-bold uppercase tracking-widest group-hover:underline">Bet Up</span>
+                                <span className="text-black font-black text-2xl block mb-1 truncate uppercase italic">{outcomes[0]}</span>
+                                <span className="text-[10px] text-black font-black uppercase tracking-widest opacity-40">SELECT_POS</span>
                             </button>
                             <button
                                 onClick={(e) => { e.stopPropagation(); setBetMode(1); }}
                                 disabled={isExpired}
-                                className="group p-4 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/40 rounded-xl transition-all active:scale-95"
+                                className="group p-4 bg-white border-2 border-black neo-shadow-sm hover:neo-shadow hover:translate-y-[-2px] transition-all"
                             >
-                                <span className="text-red-400 font-black text-xl md:text-2xl block mb-1 truncate">{outcomes[1]}</span>
-                                <span className="text-[10px] text-red-300 font-bold uppercase tracking-widest group-hover:underline">Bet Down</span>
+                                <span className="text-black font-black text-2xl block mb-1 truncate uppercase italic">{outcomes[1]}</span>
+                                <span className="text-[10px] text-black font-black uppercase tracking-widest opacity-40">SELECT_POS</span>
                             </button>
                         </div>
                     ) : (
-                        <div className="bg-gray-800/50 p-4 rounded-xl border border-white/10 animate-in slide-in-from-bottom-2 fade-in">
-                            <div className="flex justify-between items-center mb-4">
-                                <span className="text-xs font-bold text-gray-400 uppercase">Bet {betMode === 0 ? outcomes[0] : outcomes[1]}</span>
-                                <button onClick={(e) => { e.stopPropagation(); setBetMode(null) }} className="text-gray-500 hover:text-white">✕</button>
+                        <div className="bg-white p-6 border-2 border-black neo-shadow animate-in slide-in-from-bottom-2 duration-300">
+                            <div className="flex justify-between items-center mb-6 border-b border-black pb-2">
+                                <span className="text-xs font-black text-black uppercase tracking-[0.1em]">POSITION: {outcomes[betMode]}</span>
+                                <button onClick={(e) => { e.stopPropagation(); setBetMode(null) }} className="text-black font-black hover:scale-110">✕</button>
                             </div>
-                            <input
-                                autoFocus
-                                type="number"
-                                placeholder="Amount"
-                                value={stakeAmount}
-                                onChange={(e) => setStakeAmount(e.target.value)}
-                                className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white font-mono font-bold mb-3 focus:outline-none focus:border-blue-500"
-                            />
+                            <div className="relative mb-6">
+                                <input
+                                    autoFocus
+                                    type="number"
+                                    placeholder="0.00"
+                                    value={stakeAmount}
+                                    onChange={(e) => setStakeAmount(e.target.value)}
+                                    className="w-full bg-transparent border-b-2 border-black py-4 text-black font-mono font-black text-4xl focus:outline-none placeholder:text-gray-200"
+                                />
+                                <div className="absolute right-0 bottom-1">
+                                    <span className="text-[10px] font-black text-black uppercase tracking-tighter opacity-30">$PREDICT_UNITS</span>
+                                </div>
+                            </div>
                             <button
                                 onClick={(e) => { e.stopPropagation(); confirmBet(); }}
-                                className="w-full py-3 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm font-bold shadow-lg shadow-blue-500/20 active:scale-95 transition-all"
+                                className="w-full py-4 bg-black text-white font-black uppercase tracking-[0.2em] text-sm hover:bg-orange-600 transition-colors"
                             >
-                                {isInitializing ? 'INITIALIZING...' : (polymarketId && !isOnChain ? 'INITIALIZE & BET' : 'PLACE BET')}
+                                {isInitializing ? 'LOADING_ORACLE...' : (polymarketId && !isOnChain ? 'INIT_AND_BET' : 'EXECUTE_TRADE')}
                             </button>
                         </div>
                     )}
 
-                    <button onClick={(e) => { e.stopPropagation(); onOpenCreateModal?.() }} className="text-[10px] font-bold text-gray-600 hover:text-gray-400 uppercase tracking-widest text-center mt-2">
-                        + Create Custom Market
+                    <button onClick={(e) => { e.stopPropagation(); onOpenCreateModal?.() }} className="text-[10px] font-black text-gray-400 hover:text-black uppercase tracking-widest text-center mt-2 underline italic">
+                        Terminal_Create_Custom_Market
                     </button>
                 </div>
             </div>
 
             {/* Loading Overlay */}
             {isInitializing && (
-                <div className="absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+                <div className="absolute inset-0 bg-white/90 backdrop-blur-sm flex items-center justify-center z-50">
                     <div className="text-center">
-                        <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-                        <div className="text-blue-400 font-bold animate-pulse">Initializing Chain Market...</div>
+                        <div className="w-12 h-12 border-4 border-black border-t-transparent animate-spin mx-auto mb-4" />
+                        <div className="text-black font-black uppercase tracking-[0.2em] animate-pulse">Initializing_Smart_Contract</div>
                     </div>
                 </div>
             )}

@@ -8,21 +8,21 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
 
 export const metadata: Metadata = {
-  title: "Polybet | The Future is Prediction",
-  description: "The premier multi-outcome prediction protocol. Stake $POLYBET, predict events, and prove your foresight.",
-  keywords: ["prediction market", "polybet", "solana", "betting", "crypto"],
+  title: "PolyPredict | Precision Forecasting",
+  description: "The premier multi-outcome prediction protocol. Precision data, verifiable outcomes, decentralized intelligence.",
+  keywords: ["prediction market", "polypredict", "solana", "forecasting", "data"],
   manifest: "/manifest.json",
   openGraph: {
-    title: "Polybet | The Future is Prediction",
-    description: "The premier multi-outcome prediction protocol on Solana.",
-    url: "https://polybet.fun",
-    siteName: "Polybet",
+    title: "PolyPredict | Precision Forecasting",
+    description: "Verifiable prediction markets on Solana.",
+    url: "https://polypredict.ai",
+    siteName: "PolyPredict",
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Polybet - The Future is Prediction",
+        alt: "PolyPredict - Precision Forecasting",
       },
     ],
     locale: "en_US",
@@ -30,14 +30,14 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Polybet | The Future is Prediction",
-    description: "Stake $POLYBET, predict events, and prove your foresight. Live on Solana.",
+    title: "PolyPredict | Precision Forecasting",
+    description: "Verifiable prediction markets. Live on Solana.",
     images: ["/og-image.png"],
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Polybet",
+    title: "PolyPredict",
   },
   icons: {
     apple: "/icons/icon-192x192.png",
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport = {
-  themeColor: "#020617",
+  themeColor: "#ffffff",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -59,10 +59,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} ${outfit.variable}`} suppressHydrationWarning>
-      <body className="font-sans antialiased text-white selection:bg-purple-500/30">
+      <body className="font-sans antialiased text-black selection:bg-black selection:text-white">
         <Providers>
-          <div className="fixed inset-0 bg-[#020617] -z-20" />
-          <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/10 via-[#020617] to-[#020617] -z-10" />
+          <div className="fixed inset-0 bg-white -z-20" />
+          <div className="fixed inset-0 dot-grid -z-10" />
           {children}
           <InstallPrompt />
           <script

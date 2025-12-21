@@ -23,7 +23,7 @@ import { realSnapshot } from '@/data/real_snapshot';
 import { getUserMarkets, resolveUserMarket } from '@/utils/marketStorage';
 import { saveResolution, getResolutionStatus } from '@/utils/voteStorage';
 
-const CONTRACT_ADDRESS = '6ZFUNyPDn1ycjhb3RbNAmtcVvwp6oL4Zn6GswnGupump';
+const CONTRACT_ADDRESS: string = '6ZFUNyPDn1ycjhb3RbNAmtcVvwp6oL4Zn6GswnGupump';
 
 export default function Home() {
   const { publicKey } = useWallet();
@@ -329,25 +329,25 @@ export default function Home() {
   const allOthers = sortedPredictions.slice(0, 30);
 
   return (
-    <main className="min-h-screen bg-[#020617] text-white selection:bg-purple-500/30 pb-24 md:pb-0 relative overflow-x-hidden">
+    <main className="min-h-screen bg-white text-black selection:bg-black selection:text-white pb-24 md:pb-0 relative overflow-x-hidden">
       <Background activeCategory={activeCategory} />
 
       <div className="relative z-10">
         {/* Header */}
-        <div className="sticky top-0 z-50 border-b border-gray-800 bg-gray-950/80 backdrop-blur-xl">
-          <div className="mx-auto flex max-w-7xl items-center justify-between px-4 md:px-6 py-3 md:py-4">
+        <div className="sticky top-0 z-50 border-b-2 border-black bg-white">
+          <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 md:px-6 h-16 md:h-20">
             <div className="flex items-center gap-2 md:gap-3">
-              <h1 className="text-lg md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600">
-                POLYBET
+              <h1 className="text-xl md:text-3xl font-black text-black tracking-tighter italic uppercase">
+                POLYPREDICT
               </h1>
             </div>
 
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1 md:py-1.5 bg-gray-900 border border-white/5 rounded-lg text-[9px] md:text-[10px] font-mono group">
-                <span className="hidden md:inline text-gray-500 uppercase">CA:</span>
-                <span className="text-gray-400">{CONTRACT_ADDRESS === 'COMING SOON' ? CONTRACT_ADDRESS : `${(CONTRACT_ADDRESS as string).slice(0, 4)}...${(CONTRACT_ADDRESS as string).slice(-4)}`}</span>
-                <button onClick={copyToClipboard} className="text-purple-500 hover:text-purple-400 transition-colors p-1">
-                  {copied ? <Check size={10} className="md:w-3 md:h-3" /> : <Copy size={10} className="md:w-3 md:h-3" />}
+              <div className="hidden lg:flex items-center gap-2 px-3 py-1 bg-gray-50 border-2 border-black text-[10px] font-mono font-black">
+                <span className="text-gray-400 uppercase">FEED_ADDR:</span>
+                <span className="text-black">{CONTRACT_ADDRESS === 'COMING SOON' ? CONTRACT_ADDRESS : `${(CONTRACT_ADDRESS as string).slice(0, 4)}...${(CONTRACT_ADDRESS as string).slice(-4)}`}</span>
+                <button onClick={copyToClipboard} className="text-black hover:text-orange-600 transition-colors p-1">
+                  {copied ? <Check size={12} /> : <Copy size={12} />}
                 </button>
               </div>
 
@@ -355,32 +355,22 @@ export default function Home() {
                 href={CONTRACT_ADDRESS === 'COMING SOON' ? '#' : `https://pump.fun/${CONTRACT_ADDRESS}`}
                 target={CONTRACT_ADDRESS === 'COMING SOON' ? '_self' : '_blank'}
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-[9px] md:text-[10px] font-black uppercase tracking-tighter px-3 md:px-4 py-1.5 md:py-2 rounded-full shadow-lg shadow-purple-500/20 active:scale-95 transition-all outline-none"
+                className="flex items-center gap-2 bg-black text-white text-[10px] font-black uppercase tracking-[0.2em] px-4 py-2 border-2 border-black neo-shadow-sm hover:translate-y-[-2px] hover:neo-shadow active:translate-y-[2px] active:neo-shadow-none transition-all"
               >
-                Buy <span className="hidden md:inline">$POLYBET</span>
-              </a>
-
-              <a
-                href="https://x.com/Polybet_Labs"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2 text-gray-400 hover:text-blue-400 transition-colors bg-gray-900 border border-white/5 rounded-lg md:flex hidden"
-                title="Follow us on Twitter"
-              >
-                <Twitter size={16} />
+                BUY_TOKEN
               </a>
 
               <button
                 onClick={() => setIsDashboardOpen(true)}
-                className="hidden sm:flex text-xs font-bold text-gray-400 hover:text-white transition-colors items-center gap-2"
+                className="hidden sm:flex text-[11px] font-black text-black uppercase tracking-widest hover:underline"
               >
-                Dashboard
+                STATS
               </button>
               <button
                 onClick={() => setIsPositionsOpen(true)}
-                className="hidden md:flex text-xs md:text-sm font-bold text-gray-400 hover:text-white transition-colors items-center gap-2"
+                className="hidden md:flex text-[11px] font-black text-black uppercase tracking-widest hover:underline"
               >
-                My Bets
+                MY_BOOK
               </button>
               <WalletConnect />
             </div>
@@ -395,16 +385,15 @@ export default function Home() {
           <MarketWarRoom isOpen={isWarRoomOpen} onClose={() => setIsWarRoomOpen(false)} market={selectedMarket} /> {/* Added MarketWarRoom */}
           <TraderDashboard isOpen={isDashboardOpen} onClose={() => setIsDashboardOpen(false)} walletAddress={publicKey?.toString()} />
 
-          {/* Featured Market Section */}
           <section>
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest">Featured Prediction</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xs font-black text-black uppercase tracking-[0.2em] italic underline">ORACLE_HIGHLIGHT</h2>
               <button
                 onClick={() => setIsCreateModalOpen(true)}
-                className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-purple-400 border border-purple-500/30 px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
+                className="flex items-center gap-2 bg-white hover:bg-black hover:text-white text-black border-2 border-black px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all neo-shadow-sm hover:translate-y-[-1px]"
               >
                 <Plus size={14} />
-                Create Market
+                CREATE_MARKET
               </button>
             </div>
 
@@ -424,23 +413,23 @@ export default function Home() {
           </section>
 
           {/* Discovery & Sort Bar */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4 sticky top-[60px] md:top-[72px] z-40 bg-[#020617]/90 backdrop-blur-xl py-3 md:py-5 border-b border-white/5">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4 sticky top-[64px] md:top-[80px] z-40 bg-white py-4 md:py-6 border-b-2 border-black">
             <div className="flex flex-col gap-4 w-full md:w-auto">
               <NavCategories active={activeCategory} onSelect={setActiveCategory} />
 
               <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
-                <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest mr-2">Sort By:</span>
+                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mr-2 italic">SORT_ORDER</span>
                 {[
-                  { id: 'volume', label: '🔥 Volume' },
-                  { id: 'newest', label: '✨ Newest' },
-                  { id: 'ending', label: '⏳ Ending' }
+                  { id: 'volume', label: 'VOL' },
+                  { id: 'newest', label: 'NEW' },
+                  { id: 'ending', label: 'TIME' }
                 ].map((option) => (
                   <button
                     key={option.id}
                     onClick={() => setSortBy(option.id as any)}
-                    className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all border ${sortBy === option.id
-                      ? 'bg-white text-black border-white'
-                      : 'bg-white/5 text-gray-400 border-white/5 hover:border-white/20'
+                    className={`px-4 py-1.5 text-[10px] font-black tracking-widest uppercase transition-all border-2 ${sortBy === option.id
+                      ? 'bg-black text-white border-black'
+                      : 'bg-white text-black border-black hover:bg-gray-50'
                       }`}
                   >
                     {option.label}
@@ -450,13 +439,13 @@ export default function Home() {
             </div>
 
             <div className="relative group">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4 group-focus-within:text-purple-400 transition-colors" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-black w-4 h-4" />
               <input
                 type="text"
-                placeholder="Search markets..."
+                placeholder="PROBE_MARKETS..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full md:w-72 bg-gray-900/50 border border-white/5 focus:border-purple-500/50 rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none transition-all placeholder:text-gray-600 focus:bg-gray-900"
+                className="w-full md:w-80 bg-gray-50 border-2 border-black focus:bg-white pl-10 pr-4 py-3 text-xs font-black uppercase outline-none transition-all placeholder:text-gray-300"
               />
             </div>
           </div>
@@ -482,8 +471,8 @@ export default function Home() {
             ) : (
               <>
                 <section>
-                  <h2 className="text-2xl font-bold text-white mb-6">🔥 Hot Right Now</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <h2 className="text-3xl font-black text-black mb-8 italic uppercase tracking-tighter border-l-8 border-black pl-4">HOT_DATA_FEED</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {hotMarkets.map((p) => (
                       <PredictionCard
                         key={p.id}
@@ -537,35 +526,29 @@ export default function Home() {
           </section>
         </div>
 
-        {/* Footer Placeholder for simplicity, restore fully later if needed */}
-        <div className="border-t border-gray-800 bg-gray-950 py-16 text-center relative overflow-hidden">
-          <div className="absolute inset-0 bg-purple-500/5 [mask-image:radial-gradient(circle_at_center,white,transparent)] pointer-events-none" />
+        {/* Footer */}
+        <div className="border-t-4 border-black bg-white py-20 text-center relative overflow-hidden">
+          <div className="absolute inset-0 dot-grid opacity-20" />
 
           <div className="max-w-7xl mx-auto px-6 relative z-10">
-            <div className="flex flex-col items-center gap-6">
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-full text-[10px] font-mono group">
-                <span className="text-gray-500 uppercase">Contract:</span>
-                <span className="text-gray-300">{CONTRACT_ADDRESS}</span>
-                {CONTRACT_ADDRESS !== 'COMING SOON' && (
-                  <button onClick={copyToClipboard} className="text-purple-500 hover:text-purple-400 transition-colors ml-1 p-1">
-                    {copied ? <Check size={12} /> : <Copy size={12} />}
-                  </button>
-                )}
+            <div className="flex flex-col items-center gap-8">
+              <div className="flex items-center gap-2 px-4 py-2 bg-black text-white border-2 border-black text-[10px] font-mono font-black">
+                <span className="text-gray-400 uppercase">CONTRACT_IDENT:</span>
+                <span>{CONTRACT_ADDRESS}</span>
               </div>
 
               <div className="space-y-4 max-w-2xl px-4">
-                <p className="text-gray-400 text-xs font-medium uppercase tracking-[0.2em]">Polybet © 2025</p>
-                <p className="text-gray-600 text-[10px] leading-relaxed italic">
-                  Polybet is a decentralized prediction protocol in Beta. All participation is at your own risk.
-                  Digital assets are highly volatile. This is not financial advice.
-                  Be the Alpha, or be the exit liquidity.
+                <p className="text-black text-sm font-black uppercase tracking-[0.3em] italic underline">POLYPREDICT_TERMINAL_BETA</p>
+                <p className="text-black text-[11px] leading-relaxed font-black uppercase opacity-60">
+                  Precision forecasting. Verifiable outcomes. Decentralized intelligence.
+                  This protocol is in experimental preview. Trade at your own risk.
                 </p>
               </div>
 
-              <div className="flex items-center gap-8 mt-4">
-                <a href={CONTRACT_ADDRESS === 'COMING SOON' ? '#' : `https://pump.fun/${CONTRACT_ADDRESS}`} target="_blank" rel="noopener" className="text-xs font-black text-gray-500 hover:text-purple-400 transition-colors uppercase tracking-widest">Pump.fun</a>
-                <a href="https://x.com/Polybet_Labs" target="_blank" rel="noopener noreferrer" className="text-xs font-black text-gray-500 hover:text-blue-400 transition-colors uppercase tracking-widest">Twitter (X)</a>
-                <a href="#" className="text-xs font-black text-gray-500 hover:text-white transition-colors uppercase tracking-widest">Docs</a>
+              <div className="flex items-center gap-12 mt-4">
+                <a href={CONTRACT_ADDRESS === 'COMING SOON' ? '#' : `https://pump.fun/${CONTRACT_ADDRESS}`} target="_blank" rel="noopener" className="text-xs font-black text-black hover:text-orange-600 transition-colors uppercase tracking-[0.2em]">PUMP_TERMINAL</a>
+                <a href="https://x.com/PolyPredict_AI" target="_blank" rel="noopener noreferrer" className="text-xs font-black text-black hover:text-orange-600 transition-colors uppercase tracking-[0.2em]">X_INTEL</a>
+                <a href="#" className="text-xs font-black text-black hover:text-orange-600 transition-colors uppercase tracking-[0.2em]">PROTOCOL_DOCS</a>
               </div>
             </div>
           </div>
