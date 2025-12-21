@@ -85,6 +85,7 @@ export const PredictionCard = ({
     const [pythPrice, setPythPrice] = useState<number | null>(null);
     const [openPrice, setOpenPrice] = useState<number | null>(null);
     const [isInitializing, setIsInitializing] = useState(false); // Loading state for lazy init
+    const [lastPriceUpdate, setLastPriceUpdate] = useState(0);
 
     // Extraction Logic for "Up/Down" markets
     // Priority: Question -> Slug -> EventTitle -> Description
@@ -218,7 +219,10 @@ export const PredictionCard = ({
                 const pollPrice = async () => {
                     try {
                         const prices = await getPythPrices([symbol]);
-                        if (prices[symbol]) setPythPrice(prices[symbol]);
+                        if (prices[symbol]) {
+                            if (prices[symbol] !== pythPrice) setLastPriceUpdate(Date.now());
+                            setPythPrice(prices[symbol]);
+                        }
                     } catch (e) {
                         console.error('Pyth polling error:', e);
                     }
@@ -438,12 +442,18 @@ export const PredictionCard = ({
     return (
         <div
             onClick={onOpenExpanded}
-            className={`terminal-card neo-shadow-sm p-4 md:p-5 flex flex-col gap-4 transition-all duration-200 relative overflow-hidden group hover:neo-shadow cursor-pointer ${isHot ? 'bg-orange-50/30' : 'bg-white'
+            className={`terminal-card neo-shadow-sm p-4 md:p-5 flex flex-col gap-4 transition-all duration-200 relative overflow-hidden group hover:neo-shadow cursor-pointer ${isHot ? 'bg-orange-50/10' : 'bg-white'
                 } ${(isExpired && !resolved) ? 'grayscale opacity-80' : ''}`}
             style={{
-                borderColor: resolved ? '#000000' : '#000000',
+                borderColor: '#000000',
+                paddingLeft: '1.25rem'
             }}
         >
+            {/* 1. Signal Sidebar */}
+            <div
+                className="absolute left-0 top-0 bottom-0 w-1.5 z-30 transition-all duration-300 group-hover:w-2"
+                style={{ backgroundColor: isHot ? '#ea580c' : theme.color }}
+            />
             {/* Market Closed Banner */}
             {isExpired && !resolved && (
                 <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
@@ -464,26 +474,19 @@ export const PredictionCard = ({
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start gap-3 md:gap-4 z-10">
                 <div className="flex flex-col gap-1.5 flex-1 w-full">
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <div className={`flex items-center gap-1.5 px-2 py-0.5 border border-black ${resolved ? 'bg-gray-100 text-gray-500' : 'bg-black text-white'}`}>
-                            <CategoryIcon size={10} strokeWidth={3} className={resolved ? 'text-gray-500' : 'text-orange-500'} />
-                            <span className="text-[10px] font-black uppercase tracking-widest">{displayCategory}</span>
+                    <div className="flex items-center gap-0 flex-wrap">
+                        <div className="flex items-center gap-2 px-2 py-0.5 border-y border-l border-black bg-black text-white">
+                            <CategoryIcon size={10} strokeWidth={3} className="text-orange-500" />
+                            <span className="text-[9px] font-black uppercase tracking-[0.2em]">{displayCategory}</span>
                         </div>
-
-                        {/* Lazy Init Badge */}
-                        {polymarketId && !isOnChain && !resolved && (
-                            <span className="text-[10px] font-mono font-black uppercase bg-orange-500 text-white px-2 py-0.5 border border-black">
-                                NEW
-                            </span>
+                        <div className="flex items-center gap-2 px-2 py-0.5 border border-black bg-white text-black font-mono text-[9px] font-bold">
+                            #{id.toString().padStart(4, '0')}
+                        </div>
+                        {!resolved && (
+                            <div className="flex items-center gap-2 px-2 py-0.5 border-y border-r border-black bg-gray-50 text-black/40 text-[9px] font-black uppercase tracking-widest">
+                                STATUS: {polymarketId && !isOnChain ? 'INITIALIZING' : 'LIVE_FEED'}
+                            </div>
                         )}
-
-                        {isHot && !resolved && <span className="text-[10px] font-black text-black flex items-center gap-1 bg-yellow-400 px-2 py-0.5 border border-black italic">
-                            HOT
-                        </span>}
-                        {resolved && <span className="text-[10px] font-black text-white bg-green-600 px-2 py-0.5 border border-black flex items-center gap-1">
-                            <CheckCircle2 size={10} />
-                            RESOLVED
-                        </span>}
                     </div>
                     <h3 className={`font-outfit font-black text-xl leading-tight transition-colors uppercase italic ${resolved ? 'text-gray-400' : 'text-black'}`}>
                         {displayTitle}
@@ -511,9 +514,12 @@ export const PredictionCard = ({
                                     transition={{ duration: 0.8, repeat: Infinity }}
                                     className="w-1.5 h-1.5 rounded-full bg-red-600 shadow-[0_0_5px_rgba(220,38,38,0.5)]"
                                 />
-                                <span className="text-[9px] text-red-600 uppercase font-black tracking-widest animate-pulse">LIVE_ORACLE</span>
+                                <span className="text-[8px] text-red-600 uppercase font-black tracking-widest animate-pulse">ORACLE_SIGNAL</span>
                             </div>
-                            <span className="text-xs font-mono font-black text-black flex items-center gap-1 bg-white border-2 border-black px-2 py-0.5 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                            <span
+                                key={lastPriceUpdate}
+                                className="text-xs font-mono font-black text-black flex items-center gap-1 bg-white border-2 border-black px-2 py-0.5 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] animate-price-glitch"
+                            >
                                 {pythPrice ? `$${pythPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'OFFLINE'}
                             </span>
                         </div>
@@ -524,15 +530,16 @@ export const PredictionCard = ({
             {/* Info Bar */}
             {
                 !resolved && (
-                    <div className="flex items-center gap-3 md:gap-4 text-[11px] font-black text-black z-10 border-b-2 border-black pb-2">
+                    <div className="flex items-center gap-3 md:gap-4 text-[10px] font-black text-black z-10 border-b-2 border-black pb-2">
                         <div className="flex items-center gap-1.5 border-r border-black/10 pr-3 md:pr-4">
-                            <Clock size={12} className={isExpired ? 'text-red-500' : 'text-black'} />
-                            <span className={isExpired ? 'text-red-500' : ''}>{timeLeft()} <span className="hidden md:inline">REMAINING</span></span>
+                            <Clock size={12} className={isExpired ? 'text-red-500' : 'text-black'} strokeWidth={3} />
+                            <span className={`font-mono ${isExpired ? 'text-red-500' : ''}`}>{timeLeft()} <span className="font-outfit opacity-40">REMAINING</span></span>
                         </div>
                         <div className="flex items-center gap-1.5">
-                            <BarChart3 size={12} className="text-black" />
-                            <span className="text-[9px] text-black/40 mr-1 hidden md:inline">POOL_VOLUME:</span>
-                            <span>{totalLiquidity.toLocaleString()} $PREDICT</span>
+                            <BarChart3 size={12} className="text-black" strokeWidth={3} />
+                            <span className="text-[8px] text-black/40 mr-1 hidden md:inline font-outfit">POOL_VOLUME:</span>
+                            <span className="font-mono">{totalLiquidity.toLocaleString()}</span>
+                            <span className="text-[8px] text-black/40 font-outfit">$PREDICT</span>
                         </div>
                     </div>
                 )
@@ -545,9 +552,9 @@ export const PredictionCard = ({
                         key={idx}
                         onClick={(e) => handleOutcomeClick(e, idx)}
                         disabled={isExpired || resolved}
-                        className={`w-full group/btn relative h-14 border-2 transition-all flex items-center justify-between px-4 ${votedIndex === idx
+                        className={`w-full group/btn relative h-14 border-2 transition-all flex items-center justify-between px-4 overflow-hidden ${votedIndex === idx
                             ? 'bg-black text-white border-black neo-shadow-sm'
-                            : 'bg-white border-black neo-shadow-sm hover:translate-y-[-2px] hover:neo-shadow'
+                            : 'bg-white border-black neo-shadow-sm hover:translate-y-[-2px] hover:neo-shadow hover:bg-black hover:text-white'
                             } ${resolved && winningOutcome !== idx ? 'opacity-40 grayscale' : ''} ${isExpired && !resolved ? 'cursor-not-allowed' : ''}`}
                     >
                         {/* Probability Fill */}
@@ -567,14 +574,14 @@ export const PredictionCard = ({
                                         outcomes[idx].toLowerCase().includes('yes') ||
                                         outcomes[idx].toLowerCase().includes('no')
                                     ) && (
-                                            <span className="ml-1 text-[10px] font-normal opacity-60">
-                                                {(outcomes[idx].toLowerCase().includes('up') || outcomes[idx].toLowerCase().includes('yes')) ? '>' : '<'} {priceTarget}
+                                            <span className="ml-1 text-[8px] font-mono opacity-40">
+                                                {(outcomes[idx].toLowerCase().includes('up') || outcomes[idx].toLowerCase().includes('yes')) ? 'GTE' : 'LTE'} {priceTarget}
                                             </span>
                                         )}
                                 </span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <span className={`text-xs font-mono font-black ${votedIndex === idx ? 'text-white' : 'text-black'}`}>
+                                <span className={`text-[10px] font-mono font-bold ${votedIndex === idx ? 'text-white' : 'text-black group-hover/btn:text-white opacity-40 group-hover/btn:opacity-100 transition-colors'}`}>
                                     {outcomeProbabilities[idx].toFixed(0)}%
                                 </span>
                             </div>
@@ -642,6 +649,18 @@ export const PredictionCard = ({
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* Provenance Footer */}
+            <div className="mt-auto pt-4 flex flex-col gap-1 border-t border-dashed border-black/10 origin-bottom scale-y-95">
+                <div className="flex justify-between items-center">
+                    <span className="text-[7px] font-mono text-black/40 uppercase tracking-[0.2em]">
+                        DATA_LAYER: {isCrypto ? 'PYTH_NETWORK' : 'POLYMARKET_RELAY_V2'}
+                    </span>
+                    <span className="text-[7px] font-mono text-black/40 uppercase">
+                        SIG_STUB: {marketPublicKey ? `${marketPublicKey.slice(0, 8)}...` : 'UNSIGN_DATA'}
+                    </span>
+                </div>
+            </div>
 
             {/* Footer / Status */}
             {

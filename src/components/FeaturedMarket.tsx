@@ -45,6 +45,7 @@ export const FeaturedMarket = ({ data, onOpenCreateModal, onOpenExpanded }: Feat
     const [pythPrice, setPythPrice] = useState<number | null>(null);
     const [openPrice, setOpenPrice] = useState<number | null>(null);
     const [isInitializing, setIsInitializing] = useState(false);
+    const [lastPriceUpdate, setLastPriceUpdate] = useState(0);
 
     // --- RECONSTRUCTION LOGIC (Parity with PredictionCard) ---
     const findTarget = () => {
@@ -112,7 +113,10 @@ export const FeaturedMarket = ({ data, onOpenCreateModal, onOpenExpanded }: Feat
                         ]);
                         if (sparkline.length > 0) setPythData(sparkline);
                         if (op) setOpenPrice(op);
-                        if (prices[symbol]) setPythPrice(prices[symbol]);
+                        if (prices[symbol]) {
+                            if (prices[symbol] !== pythPrice) setLastPriceUpdate(Date.now());
+                            setPythPrice(prices[symbol]);
+                        }
                     } catch (e) {
                         console.error('Featured data fetch error:', e);
                     }
@@ -240,9 +244,13 @@ export const FeaturedMarket = ({ data, onOpenCreateModal, onOpenExpanded }: Feat
     };
 
     const CategoryIcon = getCategoryIcon(category);
+    const displayCategory = (question.toLowerCase().includes(' vs ') || question.toLowerCase().includes(' vs. ')) ? 'SPORTS' : category;
 
     return (
-        <div onClick={onOpenExpanded} className="relative group overflow-hidden neo-border neo-shadow bg-white cursor-pointer">
+        <div onClick={onOpenExpanded} className="relative group overflow-hidden neo-border neo-shadow bg-white cursor-pointer" style={{ paddingLeft: '1.25rem' }}>
+            {/* Signal Sidebar */}
+            <div className={`absolute left-0 top-0 bottom-0 w-2 z-30 bg-orange-600 transition-all duration-300 group-hover:w-3`} />
+
             {/* Background Dot Grid */}
             <div className="absolute inset-0 dot-grid opacity-10" />
 
@@ -251,21 +259,19 @@ export const FeaturedMarket = ({ data, onOpenCreateModal, onOpenExpanded }: Feat
                 <div className="lg:col-span-3 p-5 md:p-8 flex flex-col justify-between relative border-b lg:border-b-0 lg:border-r border-black order-1">
 
                     {/* Header Badges */}
-                    <div className="flex items-center gap-3 mb-6">
-                        <div className="flex items-center gap-2 px-3 py-1 bg-black text-white border border-black italic">
+                    <div className="flex items-center gap-0 mb-6">
+                        <div className="flex items-center gap-2 px-3 py-1 bg-black text-white border-y border-l border-black italic">
                             <CategoryIcon size={12} strokeWidth={3} className="text-orange-500" />
                             <span className="text-[10px] font-black uppercase tracking-[0.2em]">
-                                MARKET_ALERT
+                                {displayCategory}_PROTOCOL
                             </span>
                         </div>
-                        {polymarketId && !isOnChain && (
-                            <span className="bg-orange-600 text-white text-[10px] font-black px-2 py-1 border border-black uppercase tracking-widest animate-pulse">
-                                UNINITIALIZED
-                            </span>
-                        )}
-                        <span className="text-[10px] font-black text-black uppercase tracking-widest bg-yellow-400 px-2 py-1 border border-black italic">
-                            HOT_VOL_{totalLiquidity > 10000 ? 'HIGH' : 'LOW'}
-                        </span>
+                        <div className="flex items-center gap-2 px-3 py-1 border border-black bg-white text-black font-mono text-[10px] font-bold">
+                            MARKET_REF: #{id.toString().padStart(4, '0')}
+                        </div>
+                        <div className="flex items-center gap-2 px-3 py-1 border-y border-r border-black bg-gray-50 text-black/40 text-[10px] font-black uppercase tracking-widest hidden md:flex">
+                            SYS_STATUS: {polymarketId && !isOnChain ? 'INIT_PENDING' : 'OPERATIONAL'}
+                        </div>
                     </div>
 
                     {/* Main Title */}
@@ -273,7 +279,6 @@ export const FeaturedMarket = ({ data, onOpenCreateModal, onOpenExpanded }: Feat
                         {displayTitle}
                     </h2>
 
-                    {/* Stats Row */}
                     <div className="flex flex-wrap items-center gap-4 md:gap-8 mb-8 border-t-2 border-black pt-6">
                         {/* Live Price */}
                         {pythPrice && (
@@ -284,9 +289,12 @@ export const FeaturedMarket = ({ data, onOpenCreateModal, onOpenExpanded }: Feat
                                         transition={{ duration: 0.8, repeat: Infinity }}
                                         className="w-2 h-2 rounded-full bg-red-600 shadow-[0_0_8px_rgba(220,38,38,0.5)]"
                                     />
-                                    <span className="text-[10px] text-red-600 font-black uppercase tracking-[0.2em] animate-pulse">ORACLE_LIVE_FEED</span>
+                                    <span className="text-[9px] text-red-600 font-black uppercase tracking-[0.2em] animate-pulse">ORACLE_FEED_ACTIVE</span>
                                 </div>
-                                <span className="text-xl md:text-3xl font-mono font-black text-black flex items-center gap-2">
+                                <span
+                                    key={lastPriceUpdate}
+                                    className="text-xl md:text-3xl font-mono font-black text-black flex items-center gap-2 animate-price-glitch"
+                                >
                                     ${pythPrice.toLocaleString()}
                                 </span>
                             </div>
@@ -294,7 +302,7 @@ export const FeaturedMarket = ({ data, onOpenCreateModal, onOpenExpanded }: Feat
 
                         {/* Vol */}
                         <div className="flex flex-col">
-                            <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1 italic">Volume_PREDICT</span>
+                            <span className="text-[9px] text-black/40 font-black uppercase tracking-widest mb-1 italic">Volume_PREDICT</span>
                             <span className="text-xl md:text-3xl font-mono font-black text-black">${totalLiquidity.toLocaleString()}</span>
                         </div>
                     </div>
@@ -302,6 +310,12 @@ export const FeaturedMarket = ({ data, onOpenCreateModal, onOpenExpanded }: Feat
                     {/* Chart Area */}
                     <div className="h-24 md:h-32 w-full relative overflow-hidden opacity-30">
                         {pythData && <Sparkline data={pythData} width={600} height={128} color="#000000" />}
+                    </div>
+
+                    {/* Industrial Provenance */}
+                    <div className="pt-4 flex justify-between items-center opacity-40">
+                        <span className="text-[8px] font-mono uppercase tracking-[0.2em]">TRANS_LAYER: SOLANA_MAINNET_BETA</span>
+                        <span className="text-[8px] font-mono uppercase tracking-[0.2em]">ORACLE: PYTH_NETWORK_L2</span>
                     </div>
                 </div>
 
@@ -325,18 +339,22 @@ export const FeaturedMarket = ({ data, onOpenCreateModal, onOpenExpanded }: Feat
                             <button
                                 onClick={(e) => { e.stopPropagation(); setBetMode(0); }}
                                 disabled={isExpired}
-                                className="group p-4 bg-white border-2 border-black neo-shadow-sm hover:neo-shadow hover:translate-y-[-2px] transition-all"
+                                className="group p-4 bg-white border-2 border-black neo-shadow-sm hover:neo-shadow hover:translate-y-[-2px] hover:bg-black hover:text-white transition-all overflow-hidden relative"
                             >
-                                <span className="text-black font-black text-2xl block mb-1 truncate uppercase italic">{outcomes[0]}</span>
-                                <span className="text-[10px] text-black font-black uppercase tracking-widest opacity-40">SELECT_POS</span>
+                                <div className="relative z-10">
+                                    <span className="text-2xl block mb-1 truncate uppercase italic font-black">{outcomes[0]}</span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest opacity-40 group-hover:opacity-100">POSITION_A</span>
+                                </div>
                             </button>
                             <button
                                 onClick={(e) => { e.stopPropagation(); setBetMode(1); }}
                                 disabled={isExpired}
-                                className="group p-4 bg-white border-2 border-black neo-shadow-sm hover:neo-shadow hover:translate-y-[-2px] transition-all"
+                                className="group p-4 bg-white border-2 border-black neo-shadow-sm hover:neo-shadow hover:translate-y-[-2px] hover:bg-black hover:text-white transition-all overflow-hidden relative"
                             >
-                                <span className="text-black font-black text-2xl block mb-1 truncate uppercase italic">{outcomes[1]}</span>
-                                <span className="text-[10px] text-black font-black uppercase tracking-widest opacity-40">SELECT_POS</span>
+                                <div className="relative z-10">
+                                    <span className="text-2xl block mb-1 truncate uppercase italic font-black">{outcomes[1]}</span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest opacity-40 group-hover:opacity-100">POSITION_B</span>
+                                </div>
                             </button>
                         </div>
                     ) : (
