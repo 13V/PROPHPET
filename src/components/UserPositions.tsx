@@ -52,8 +52,10 @@ export const UserPositions = ({ isOpen, onClose }: UserPositionsProps) => {
                         className="fixed inset-y-0 right-0 w-full md:max-w-md bg-white border-l-2 border-black shadow-[-8px_0px_0px_0px_rgba(0,0,0,1)] z-[70] flex flex-col"
                     >
                         {/* Header */}
-                        <div className="bg-black text-white p-6 border-b-2 border-black flex items-center justify-between">
-                            <div className="flex items-center gap-4">
+                        <div className="bg-black text-white p-6 border-b-2 border-black flex items-center justify-between relative">
+                            {/* Signal Sidebar inside panel */}
+                            <div className="absolute left-0 top-0 bottom-0 w-2 bg-orange-600" />
+                            <div className="flex items-center gap-4 pl-2">
                                 <Wallet className="text-orange-500 w-5 h-5" />
                                 <span className="text-[10px] font-black uppercase tracking-[0.3em] italic leading-none">INTEL_PORTFOLIO_V1.1</span>
                             </div>
@@ -71,12 +73,12 @@ export const UserPositions = ({ isOpen, onClose }: UserPositionsProps) => {
                         {/* Stats Summary */}
                         <div className="p-6 grid grid-cols-2 gap-0 border-b-2 border-black bg-black">
                             <div className="bg-white p-6 border-r-2 border-black flex flex-col items-center">
-                                <div className="text-[10px] text-black/40 font-black uppercase tracking-widest mb-2 leading-none text-center">TOTAL_STAKED</div>
-                                <div className="text-2xl font-black text-black tracking-tighter italic">${totalStaked.toLocaleString()}</div>
+                                <div className="text-[8px] text-black/40 font-black uppercase tracking-widest mb-2 leading-none text-center">TOTAL_STAKED</div>
+                                <div className="text-2xl font-black text-black tracking-tighter italic font-mono">${totalStaked.toLocaleString()}</div>
                             </div>
                             <div className="bg-white p-6 flex flex-col items-center">
-                                <div className="text-[10px] text-black/40 font-black uppercase tracking-widest mb-2 leading-none text-center">POTENTIAL_RETURN</div>
-                                <div className="text-2xl font-black text-orange-600 tracking-tighter italic">${potentialWinnings.toLocaleString()}</div>
+                                <div className="text-[8px] text-black/40 font-black uppercase tracking-widest mb-2 leading-none text-center">POTENTIAL_RETURN</div>
+                                <div className="text-2xl font-black text-orange-600 tracking-tighter italic font-mono">${potentialWinnings.toLocaleString()}</div>
                             </div>
                         </div>
 
@@ -198,7 +200,11 @@ export const UserPositions = ({ isOpen, onClose }: UserPositionsProps) => {
                         </div>
 
                         {/* Footer Actions */}
-                        <div className="p-6 border-t-2 border-black bg-gray-50">
+                        <div className="p-6 border-t-2 border-black bg-gray-50 mt-auto">
+                            <div className="mb-4 flex justify-between items-center opacity-40">
+                                <span className="text-[7px] font-mono uppercase tracking-[0.2em]">NETWORK: SOLANA_MAINNET</span>
+                                <span className="text-[7px] font-mono uppercase tracking-[0.2em]">AUTH: WALLET_CONNECTED</span>
+                            </div>
                             <button
                                 onClick={() => {
                                     if (confirm('Irreversible Action: Terminate all protocol history?')) {

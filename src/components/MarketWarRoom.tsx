@@ -16,6 +16,7 @@ interface MarketWarRoomProps {
 export const MarketWarRoom = ({ isOpen, onClose, market }: MarketWarRoomProps) => {
     const [pythPrice, setPythPrice] = useState<number | null>(null);
     const [pythData, setPythData] = useState<number[] | null>(null);
+    const [lastPriceUpdate, setLastPriceUpdate] = useState(0);
 
     // Extraction Logic for "Up/Down" markets
     // Priority: Question -> Slug -> EventTitle -> Description
@@ -126,7 +127,10 @@ export const MarketWarRoom = ({ isOpen, onClose, market }: MarketWarRoomProps) =
                             getPythPrices([symbol])
                         ]);
                         if (sparkline.length > 0) setPythData(sparkline);
-                        if (prices[symbol]) setPythPrice(prices[symbol]);
+                        if (prices[symbol]) {
+                            if (prices[symbol] !== pythPrice) setLastPriceUpdate(Date.now());
+                            setPythPrice(prices[symbol]);
+                        }
                     } catch (e) {
                         console.error('WarRoom initial fetch error:', e);
                     }
@@ -136,7 +140,10 @@ export const MarketWarRoom = ({ isOpen, onClose, market }: MarketWarRoomProps) =
                 const pollPrice = async () => {
                     try {
                         const prices = await getPythPrices([symbol]);
-                        if (prices[symbol]) setPythPrice(prices[symbol]);
+                        if (prices[symbol]) {
+                            if (prices[symbol] !== pythPrice) setLastPriceUpdate(Date.now());
+                            setPythPrice(prices[symbol]);
+                        }
                     } catch (e) {
                         console.error('WarRoom Pyth polling error:', e);
                     }
@@ -205,8 +212,13 @@ export const MarketWarRoom = ({ isOpen, onClose, market }: MarketWarRoomProps) =
                         initial={{ scale: 0.98, opacity: 0, y: 10 }}
                         animate={{ scale: 1, opacity: 1, y: 0 }}
                         exit={{ scale: 0.98, opacity: 0, y: 10 }}
-                        className="relative w-full max-w-6xl h-full max-h-[100vh] md:max-h-[850px] bg-white border-[3px] border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] flex flex-col md:flex-row overflow-hidden"
+                        className="relative w-full max-w-6xl h-full max-h-[100vh] md:max-h-[850px] bg-white border-[3px] border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] flex flex-col md:flex-row overflow-hidden pl-2"
                     >
+                        {/* Signal Sidebar */}
+                        <div
+                            className="absolute left-0 top-0 bottom-0 w-2 z-[70]"
+                            style={{ backgroundColor: theme.color }}
+                        />
                         {/* Status Bar */}
                         <div className="absolute top-0 inset-x-0 h-6 bg-black flex items-center justify-between px-4 z-[60]">
                             <div className="flex items-center gap-4 text-[8px] font-mono font-black text-white uppercase tracking-widest">
@@ -237,20 +249,23 @@ export const MarketWarRoom = ({ isOpen, onClose, market }: MarketWarRoomProps) =
 
                         {/* Left Side: Analysis & Chart */}
                         <div className="flex-1 p-6 md:p-12 overflow-y-auto pt-16 md:pt-16">
-                            <div className="flex items-center gap-3 mb-6">
-                                <div className="flex items-center gap-2 px-3 py-1 bg-black text-white border border-black italic">
+                            <div className="flex items-center gap-0">
+                                <div className="flex items-center gap-2 px-3 py-1 bg-black text-white border-y border-l border-black italic">
                                     <CategoryIcon size={12} strokeWidth={3} className="text-orange-500" />
                                     <span className="text-[10px] font-black uppercase tracking-[0.2em]">
                                         {displayCategory}_INTEL
                                     </span>
                                 </div>
-                                <span className="text-black/40 text-[10px] font-mono font-black uppercase tracking-widest">ADDR: {market.id.toString().slice(0, 12)}...</span>
-                                {isExpired && !resolved && (
-                                    <span className="bg-orange-600 text-white text-[10px] font-black px-3 py-1 border border-black uppercase tracking-widest animate-pulse">
-                                        THROTTLE_LOCKED
-                                    </span>
-                                )}
+                                <div className="flex items-center gap-2 px-3 py-1 border border-black bg-white text-black font-mono text-[10px] font-bold">
+                                    REF_ID: #{market.id.toString().padStart(4, '0')}
+                                </div>
                             </div>
+                            <span className="text-black/40 text-[10px] font-mono font-black uppercase tracking-widest">ADDR: {market.id.toString().slice(0, 12)}...</span>
+                            {isExpired && !resolved && (
+                                <span className="bg-orange-600 text-white text-[10px] font-black px-3 py-1 border border-black uppercase tracking-widest animate-pulse">
+                                    THROTTLE_LOCKED
+                                </span>
+                            )}
 
                             <h1 className="text-3xl md:text-6xl font-black text-black leading-[0.9] mb-10 tracking-tighter uppercase italic">
                                 {displayTitle}
@@ -270,12 +285,15 @@ export const MarketWarRoom = ({ isOpen, onClose, market }: MarketWarRoomProps) =
                                                 />
                                                 <p className="text-[10px] font-black text-red-600 uppercase tracking-[0.2em] animate-pulse">ORACLE_LIVE_FEED</p>
                                             </div>
-                                            <p className="text-5xl font-black text-black font-mono tracking-tighter">
+                                            <p
+                                                key={lastPriceUpdate}
+                                                className="text-5xl font-black text-black font-mono tracking-tighter animate-price-glitch"
+                                            >
                                                 {pythPrice ? `$${pythPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '74.00%'}
                                                 {pythPrice ? (
-                                                    <span className="text-xs text-orange-600 ml-3 animate-pulse italic font-black uppercase">● PROTOCOL_STREAM</span>
+                                                    <span className="text-[10px] text-orange-600 ml-3 animate-pulse italic font-black uppercase tracking-widest">● SIGNAL_STABLE</span>
                                                 ) : (
-                                                    <span className="text-xs text-orange-600 ml-3 italic font-black uppercase">↑ 4.2%_VOL</span>
+                                                    <span className="text-[10px] text-orange-600 ml-3 italic font-black uppercase tracking-widest">↑ 4.2%_VOL</span>
                                                 )}
                                             </p>
                                         </div>
@@ -295,19 +313,25 @@ export const MarketWarRoom = ({ isOpen, onClose, market }: MarketWarRoomProps) =
                             {/* Stats Grid */}
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-0 border-2 border-black">
                                 {[
-                                    { label: 'Total Volume', value: market.totalVolume ? `$${market.totalVolume.toLocaleString()}` : '$0', icon: TrendingUp },
-                                    { label: 'Liquidity', value: '$124.5k', icon: ShieldCheck },
+                                    { label: 'Total Volume', value: market.totalLiquidity ? market.totalLiquidity.toLocaleString() : '0', icon: TrendingUp },
+                                    { label: 'Liquidity', value: '$124,500', icon: ShieldCheck },
                                     { label: 'Active Traders', value: '1,245', icon: Users },
                                     { label: 'Sentiment', value: isExpired ? 'CLOSED' : 'BULLISH', icon: MessageSquare }
                                 ].map((stat, i) => (
                                     <div key={i} className="border-black md:border-r-2 last:border-r-0 p-6 bg-white hover:bg-black hover:text-white transition-colors group">
                                         <div className="flex items-center gap-2 mb-3 text-black/40 group-hover:text-white/40">
-                                            <stat.icon size={12} />
-                                            <span className="text-[9px] font-black uppercase tracking-widest">{stat.label}</span>
+                                            <stat.icon size={12} strokeWidth={3} />
+                                            <span className="text-[8px] font-black uppercase tracking-widest font-outfit">{stat.label}</span>
                                         </div>
                                         <div className="text-xl font-black font-mono tracking-tight uppercase italic">{stat.value}</div>
                                     </div>
                                 ))}
+                            </div>
+
+                            {/* Technical Provenance */}
+                            <div className="mt-8 pt-4 flex justify-between items-center border-t border-dashed border-black/10">
+                                <span className="text-[8px] font-mono text-black/40 uppercase tracking-[0.2em]">TRACE_LAYER: SOLANA_MAINNET_L2</span>
+                                <span className="text-[8px] font-mono text-black/40 uppercase tracking-[0.2em]">ORACLE: {isCrypto ? 'PYTH_NETWORK' : 'POLYMARKET_SETTLEMENT_CORE'}</span>
                             </div>
                         </div>
 
@@ -381,7 +405,7 @@ export const MarketWarRoom = ({ isOpen, onClose, market }: MarketWarRoomProps) =
                                             WARNING: CAPITAL_AT_RISK. PREDICTION_PROTOCOL_ACTIVE. VERIFY_INTEL_BEFORE_SIGNING.
                                         </div>
                                         <button
-                                            className="w-full py-5 bg-orange-600 text-white border-2 border-black font-black text-sm uppercase tracking-[0.3em] italic shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[-2px] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none transition-all"
+                                            className="w-full py-5 bg-black text-white border-2 border-black font-black text-sm uppercase tracking-[0.3em] italic shadow-[6px_6px_0px_0px_rgba(234,88,12,1)] hover:translate-y-[-2px] hover:shadow-[8px_8px_0px_0px_rgba(234,88,12,1)] active:translate-y-[2px] active:shadow-none transition-all"
                                         >
                                             APPROVE_PROTOCOL_ACCESS
                                         </button>

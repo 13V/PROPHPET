@@ -43,11 +43,12 @@ export const TraderDashboard = ({ isOpen, onClose, walletAddress }: TraderDashbo
                         exit={{ scale: 0.98, opacity: 0, y: 10 }}
                         className="relative w-full max-w-6xl bg-white border-2 border-black overflow-hidden shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] flex flex-col max-h-[90vh]"
                     >
-                        {/* Terminal Header */}
-                        <div className="bg-black text-white p-4 flex items-center justify-between border-b-2 border-black">
-                            <div className="flex items-center gap-4">
+                        <div className="bg-black text-white p-4 flex items-center justify-between border-b-2 border-black relative">
+                            {/* Signal Sidebar */}
+                            <div className="absolute left-0 top-0 bottom-0 w-2 bg-orange-600" />
+                            <div className="flex items-center gap-4 pl-2">
                                 <TrendingUp className="w-5 h-5 text-orange-500" />
-                                <span className="text-[10px] font-black uppercase tracking-[0.3em] italic">TRADER_TERMINAL_V4.0 // {walletAddress?.slice(0, 8)}...{walletAddress?.slice(-4)}</span>
+                                <span className="text-[10px] font-black font-mono uppercase tracking-[0.3em] italic">TRADER_TERMINAL_V4.0 // {walletAddress?.slice(0, 8)}...{walletAddress?.slice(-4)}</span>
                             </div>
                             <div className="flex items-center gap-6">
                                 <div className="hidden md:flex items-center gap-4 text-[10px] font-bold">
@@ -99,7 +100,7 @@ export const TraderDashboard = ({ isOpen, onClose, walletAddress }: TraderDashbo
                                             <span className="text-[10px] font-mono font-black opacity-20">STAT_{i + 1}</span>
                                         </div>
                                         <p className="text-[10px] font-black text-black/40 group-hover:text-white/40 uppercase tracking-widest mb-2 leading-none">{stat.label}</p>
-                                        <p className={`text-2xl font-black italic tracking-tighter leading-none ${stat.color === 'text-orange-600' ? 'text-orange-600 group-hover:text-white' : ''}`}>{stat.value}</p>
+                                        <p className={`text-2xl font-black italic tracking-tighter leading-none font-mono ${stat.color === 'text-orange-600' ? 'text-orange-600 group-hover:text-white' : ''}`}>{stat.value}</p>
                                     </div>
                                 ))}
                             </div>

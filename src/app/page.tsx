@@ -336,44 +336,51 @@ export default function Home() {
       <div className="relative z-10">
         {/* Header */}
         <div className="sticky top-0 z-50 border-b-2 border-black bg-white">
-          <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 md:px-6 h-16 md:h-20">
-            <div className="flex items-center gap-2 md:gap-3">
-              <h1 className="text-xl md:text-3xl font-black text-black tracking-tighter italic uppercase">
+          <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 md:px-6 h-14 md:h-16">
+            <div className="flex items-center gap-6">
+              <h1 className="text-xl md:text-2xl font-black text-black tracking-tighter italic uppercase">
                 POLYPREDICT
               </h1>
+
+              <div className="hidden lg:flex items-center gap-6 border-l-2 border-black pl-6">
+                <div className="flex flex-col">
+                  <span className="text-[7px] font-black text-gray-400 uppercase tracking-widest">SYSTEM_CLOCK</span>
+                  <span className="text-[10px] font-mono font-bold">{new Date().toISOString().split('T')[1].split('.')[0]} UTC</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[7px] font-black text-gray-400 uppercase tracking-widest">SIG_INTEL</span>
+                  <span className="text-[10px] font-mono font-bold text-orange-600 animate-pulse">98.2%_READY</span>
+                </div>
+              </div>
             </div>
 
             <div className="flex items-center gap-4">
-              <div className="hidden lg:flex items-center gap-2 px-3 py-1 bg-gray-50 border-2 border-black text-[10px] font-mono font-black">
+              <div className="hidden xl:flex items-center gap-2 px-3 py-1 bg-gray-50 border border-black text-[9px] font-mono font-bold">
                 <span className="text-gray-400 uppercase">FEED_ADDR:</span>
                 <span className="text-black">{CONTRACT_ADDRESS === 'COMING SOON' ? CONTRACT_ADDRESS : `${(CONTRACT_ADDRESS as string).slice(0, 4)}...${(CONTRACT_ADDRESS as string).slice(-4)}`}</span>
-                <button onClick={copyToClipboard} className="text-black hover:text-orange-600 transition-colors p-1">
-                  {copied ? <Check size={12} /> : <Copy size={12} />}
+                <button onClick={copyToClipboard} className="text-black hover:text-orange-600 transition-colors p-[2px]">
+                  {copied ? <Check size={10} /> : <Copy size={10} />}
                 </button>
               </div>
 
-              <a
-                href={CONTRACT_ADDRESS === 'COMING SOON' ? '#' : `https://pump.fun/${CONTRACT_ADDRESS}`}
-                target={CONTRACT_ADDRESS === 'COMING SOON' ? '_self' : '_blank'}
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 bg-black text-white text-[10px] font-black uppercase tracking-[0.2em] px-4 py-2 border-2 border-black neo-shadow-sm hover:translate-y-[-2px] hover:neo-shadow active:translate-y-[2px] active:neo-shadow-none transition-all"
-              >
-                BUY_TOKEN
-              </a>
+              <div className="flex items-center border-l-2 border-black h-16 md:h-20 ml-2">
+                <button
+                  onClick={() => setIsDashboardOpen(true)}
+                  className="px-4 h-full hidden sm:flex items-center text-[10px] font-black text-black uppercase tracking-widest hover:bg-black hover:text-white transition-colors border-r border-black/10"
+                >
+                  STATS
+                </button>
+                <button
+                  onClick={() => setIsPositionsOpen(true)}
+                  className="px-4 h-full hidden md:flex items-center text-[10px] font-black text-black uppercase tracking-widest hover:bg-black hover:text-white transition-colors"
+                >
+                  MY_BOOK
+                </button>
+              </div>
 
-              <button
-                onClick={() => setIsDashboardOpen(true)}
-                className="hidden sm:flex text-[11px] font-black text-black uppercase tracking-widest hover:underline"
-              >
-                STATS
-              </button>
-              <button
-                onClick={() => setIsPositionsOpen(true)}
-                className="hidden md:flex text-[11px] font-black text-black uppercase tracking-widest hover:underline"
-              >
-                MY_BOOK
-              </button>
-              <WalletConnect />
+              <div className="pl-4 border-l-2 border-black h-16 md:h-20 flex items-center">
+                <WalletConnect />
+              </div>
             </div>
           </div>
         </div>
@@ -391,23 +398,29 @@ export default function Home() {
           </section>
 
           {/* Discovery & Sort Bar */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4 sticky top-[64px] md:top-[80px] z-40 bg-white py-4 md:py-6 border-b-2 border-black">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4 sticky top-[56px] md:top-[64px] z-40 bg-white py-4 md:py-6 border-b-2 border-black">
             <div className="flex flex-col gap-4 w-full md:w-auto">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-orange-600 animate-pulse" />
+                <span className="text-[9px] font-black text-black uppercase tracking-[0.2em] italic">DISCOVERY_STREAM / {activeCategory.toUpperCase()}</span>
+              </div>
               <NavCategories active={activeCategory} onSelect={setActiveCategory} />
 
-              <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
-                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mr-2 italic">SORT_ORDER</span>
+              <div className="flex items-center gap-0 border border-black w-fit">
+                <div className="px-3 py-1.5 bg-gray-50 border-r border-black text-[8px] font-black text-black/40 uppercase tracking-[0.2em] italic">
+                  SORT_BY
+                </div>
                 {[
-                  { id: 'volume', label: 'VOL' },
-                  { id: 'newest', label: 'NEW' },
-                  { id: 'ending', label: 'TIME' }
+                  { id: 'volume', label: 'VOLUME' },
+                  { id: 'newest', label: 'NEWEST' },
+                  { id: 'ending', label: 'ENDING' }
                 ].map((option) => (
                   <button
                     key={option.id}
                     onClick={() => setSortBy(option.id as any)}
-                    className={`px-4 py-1.5 text-[10px] font-black tracking-widest uppercase transition-all border-2 ${sortBy === option.id
-                      ? 'bg-black text-white border-black'
-                      : 'bg-white text-black border-black hover:bg-gray-50'
+                    className={`px-4 py-1.5 text-[9px] font-black tracking-widest uppercase transition-all border-r last:border-r-0 border-black ${sortBy === option.id
+                      ? 'bg-black text-white'
+                      : 'bg-white text-black hover:bg-gray-50'
                       }`}
                   >
                     {option.label}
@@ -418,21 +431,21 @@ export default function Home() {
 
             <div className="flex items-center gap-4 w-full md:w-auto">
               <div className="relative group flex-1 md:w-80">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-black w-4 h-4" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-black/40 w-4 h-4" />
                 <input
                   type="text"
-                  placeholder="PROBE_MARKETS..."
+                  placeholder="PROBE_SYNTACTIC_FEED..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-gray-50 border-2 border-black focus:bg-white pl-10 pr-4 py-3 text-xs font-black uppercase outline-none transition-all placeholder:text-gray-300"
+                  className="w-full bg-gray-50 border-2 border-black focus:bg-white pl-10 pr-4 py-3 text-[10px] font-black uppercase outline-none transition-all placeholder:text-gray-300 italic"
                 />
               </div>
               <button
                 onClick={() => setIsCreateModalOpen(true)}
-                className="hidden sm:flex items-center gap-2 bg-black text-white px-6 py-3 text-xs font-black uppercase tracking-widest transition-all neo-shadow-sm hover:translate-y-[-2px] hover:neo-shadow active:translate-y-[2px] active:neo-shadow-none whitespace-nowrap"
+                className="hidden sm:flex items-center gap-2 bg-orange-600 text-white px-6 py-3 text-[10px] font-black uppercase tracking-widest transition-all border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none whitespace-nowrap italic"
               >
-                <Plus size={16} />
-                CREATE
+                <Plus size={14} strokeWidth={3} />
+                INITIALIZE_MARKET
               </button>
             </div>
           </div>

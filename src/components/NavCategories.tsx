@@ -21,14 +21,17 @@ export const NavCategories = ({ active = 'all', onSelect }: { active?: string, o
                     key={cat.id}
                     onClick={() => onSelect && onSelect(cat.id)}
                     className={`
-                        relative flex items-center gap-2 px-6 py-2 border-2 text-[11px] font-black uppercase tracking-widest italic transition-all whitespace-nowrap
+                        relative flex items-center gap-2 px-6 py-2 border-2 text-[10px] font-black uppercase tracking-widest italic transition-all whitespace-nowrap overflow-hidden
                         ${active === cat.id
                             ? 'text-white bg-black border-black neo-shadow-sm'
                             : 'text-black bg-white border-black hover:bg-gray-50'
                         }
                     `}
                 >
-                    <cat.icon size={14} className={active === cat.id ? "text-orange-600" : "text-black"} />
+                    {active === cat.id && (
+                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-orange-600" />
+                    )}
+                    <cat.icon size={13} className={active === cat.id ? "text-orange-600" : "text-black"} />
                     {cat.label}
                 </button>
             ))}
