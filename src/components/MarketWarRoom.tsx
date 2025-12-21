@@ -238,7 +238,7 @@ export const MarketWarRoom = ({ isOpen, onClose, market }: MarketWarRoomProps) =
                     >
                         {/* Team Background Watermarks */}
                         {teams && (
-                            <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden opacity-[0.03] grayscale">
+                            <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden opacity-10 grayscale">
                                 <div className="absolute -left-24 top-1/2 -translate-y-1/2 w-[600px] h-[600px] rotate-[-12deg]">
                                     <TeamLogo name={teams[0]} className="w-full h-full" />
                                 </div>
