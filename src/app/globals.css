@@ -3,7 +3,8 @@
 :root {
   --background: #ffffff;
   --foreground: #000000;
-  --accent: #ff5722; /* Action Orange */
+  --accent: #ff5722;
+  /* Action Orange */
   --muted: #f3f4f6;
   --border: #000000;
   --grid-size: 20px;
@@ -22,48 +23,68 @@ body {
   min-height: 100vh;
 }
 
-@layer utilities {
-  .neo-border {
-    border: 2px solid var(--border);
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  }
+/* Base Utilities */
+.neo-border {
+  border: 2px solid var(--border);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
 
-  .neo-shadow {
-    box-shadow: 4px 4px 0px 0px var(--border);
-  }
+.neo-shadow {
+  box-shadow: 4px 4px 0px 0px var(--border);
+}
 
-  .neo-shadow-sm {
-    box-shadow: 2px 2px 0px 0px var(--border);
-  }
+.neo-shadow-sm {
+  box-shadow: 2px 2px 0px 0px var(--border);
+}
 
-  .neo-hover:hover {
-    transform: translate(-2px, -2px);
-    box-shadow: 6px 6px 0px 0px var(--border);
-  }
+.neo-button {
+  border: 2px solid var(--border);
+  box-shadow: 4px 4px 0px 0px var(--border);
+  background-color: #ffffff;
+  padding: 0.5rem 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: -0.025em;
+  font-size: 0.875rem;
+  transition: all 0.1s;
+}
 
-  .neo-button {
-    @apply neo-border neo-shadow bg-white px-4 py-2 font-bold uppercase tracking-tighter text-sm;
-    transition: all 0.1s;
-  }
+.neo-button:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px 0px var(--border);
+}
 
-  .neo-button:active {
-    transform: translate(2px, 2px);
-    box-shadow: 0px 0px 0px 0px var(--border);
-  }
+.neo-button:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0px 0px 0px 0px var(--border);
+}
 
-  .dot-grid {
-    background-image: radial-gradient(var(--border) 1px, transparent 0);
-    background-size: var(--grid-size) var(--grid-size);
-    opacity: 0.1;
-  }
+.dot-grid {
+  background-image: radial-gradient(var(--border) 1px, transparent 0);
+  background-size: var(--grid-size) var(--grid-size);
+}
 
-  .terminal-card {
-    @apply neo-border bg-white;
-  }
+.terminal-card {
+  border: 2px solid var(--border);
+  background-color: #ffffff;
+}
 
-  .header-tab {
-    @apply border-r-2 border-black px-6 py-4 font-black uppercase tracking-widest text-xs hover:bg-black hover:text-white transition-colors cursor-pointer;
-  }
+.header-tab {
+  border-right: 2px solid #000000;
+  padding: 1rem 1.5rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.75rem;
+  transition-property: color, background-color;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+  cursor: pointer;
+}
+
+.header-tab:hover {
+  background-color: #000000;
+  color: #ffffff;
 }
 
 /* Scrollbar Overhaul */
@@ -82,8 +103,15 @@ body {
 
 /* Animations - Sharp and Snappy */
 @keyframes step-in {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .animate-step {
@@ -91,7 +119,9 @@ body {
 }
 
 /* Typography Overrides */
-h1, h2, h3 {
+h1,
+h2,
+h3 {
   font-family: var(--font-outfit), sans-serif;
   text-transform: uppercase;
   letter-spacing: -0.05em;
