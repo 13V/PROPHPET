@@ -13,8 +13,8 @@ async function main() {
     console.log("Initializing Polybet Protocol Config...");
 
     // --- CONFIGURATION ---
-    const feeBps = 100; // 1% Fee (100 = 1%)
-    const treasury = provider.wallet.publicKey; // Fees go to the deployer by default
+    const devVault = provider.wallet.publicKey; // Dev fees go to the deployer by default
+    const tokenMint = new PublicKey("6ZFUNyPDn1ycjhb3RbNAmtcVvwp6oL4Zn6GswnGupump"); // $PREDICT mint
     // ---------------------
 
     const [configPda] = await PublicKey.findProgramAddress(
@@ -24,7 +24,7 @@ async function main() {
 
     try {
         const tx = await program.methods
-            .initializeConfig(feeBps, treasury)
+            .initializeConfig(devVault, tokenMint)
             .accounts({
                 config: configPda,
                 authority: provider.wallet.publicKey,
@@ -35,7 +35,7 @@ async function main() {
         console.log("Successfully initialized protocol config!");
         console.log("Transaction Signature:", tx);
         console.log("Config PDA:", configPda.toString());
-        console.log("Treasury:", treasury.toString());
+        console.log("Dev Vault:", devVault.toString());
     } catch (e) {
         console.error("Initialization failed. It might already be initialized.");
         console.error(e);

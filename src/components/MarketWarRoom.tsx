@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, TrendingUp, Users, MessageSquare, ShieldCheck, Share2 } from 'lucide-react';
+import { X, TrendingUp, Users, MessageSquare, ShieldCheck, Share2, Zap, Swords, Gavel, Newspaper, Tv, Globe, Activity } from 'lucide-react';
 import { Sparkline } from './Sparkline';
 import { getPythPrices } from '@/services/pyth';
 import { getCoinGeckoSparkline } from '@/services/coingecko';
@@ -164,6 +164,19 @@ export const MarketWarRoom = ({ isOpen, onClose, market }: MarketWarRoomProps) =
         return { color: '#a855f7', glow: 'rgba(168, 85, 247, 0.15)', text: 'text-purple-400', border: 'border-purple-500/30' }; // Default
     };
 
+    const getCategoryIcon = (cat: string) => {
+        const c = (cat || '').toLowerCase();
+        const q = (market.question || '').toLowerCase();
+        if (q.includes(' vs ') || q.includes(' vs. ') || c.includes('sport')) return Swords;
+        if (c.includes('crypto')) return Zap;
+        if (c.includes('politics')) return Gavel;
+        if (c.includes('news')) return Newspaper;
+        if (c.includes('pop') || c.includes('culture') || c.includes('movie')) return Tv;
+        if (c.includes('science') || c.includes('tech')) return Globe;
+        return Activity;
+    };
+
+    const CategoryIcon = getCategoryIcon(market.category || '');
     const theme = getCategoryTheme(market.category || '');
     const displayCategory = (market.question.toLowerCase().includes(' vs ') || market.question.toLowerCase().includes(' vs. ')) ? 'SPORTS' : market.category;
     const isExpired = Date.now() > (market.endTime * 1000);
@@ -225,9 +238,12 @@ export const MarketWarRoom = ({ isOpen, onClose, market }: MarketWarRoomProps) =
                         {/* Left Side: Analysis & Chart */}
                         <div className="flex-1 p-6 md:p-12 overflow-y-auto pt-16 md:pt-16">
                             <div className="flex items-center gap-3 mb-6">
-                                <span className="bg-black text-white text-[10px] font-black px-3 py-1 border border-black uppercase tracking-[0.2em] italic">
-                                    {displayCategory}_INTEL
-                                </span>
+                                <div className="flex items-center gap-2 px-3 py-1 bg-black text-white border border-black italic">
+                                    <CategoryIcon size={12} strokeWidth={3} className="text-orange-500" />
+                                    <span className="text-[10px] font-black uppercase tracking-[0.2em]">
+                                        {displayCategory}_INTEL
+                                    </span>
+                                </div>
                                 <span className="text-black/40 text-[10px] font-mono font-black uppercase tracking-widest">ADDR: {market.id.toString().slice(0, 12)}...</span>
                                 {isExpired && !resolved && (
                                     <span className="bg-orange-600 text-white text-[10px] font-black px-3 py-1 border border-black uppercase tracking-widest animate-pulse">

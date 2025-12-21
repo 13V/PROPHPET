@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Lock, Unlock, Rocket, Calendar, Tag } from 'lucide-react';
+import { X, Lock, Unlock, Rocket, Calendar, Tag, Zap, Swords, Gavel, Newspaper, Tv } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { saveUserMarket } from '@/utils/marketStorage';
@@ -52,6 +52,18 @@ export const CreateMarketModal = ({ isOpen, onClose }: CreateMarketModalProps) =
     const [category, setCategory] = useState('CRYPTO');
     const [endDate, setEndDate] = useState('');
     const [mintConf, setMintConf] = useState(''); // Pump.fun Mint Address
+
+    const getCategoryIcon = (cat: string) => {
+        const c = cat.toLowerCase();
+        if (c.includes('crypto')) return Zap;
+        if (c.includes('sport')) return Swords;
+        if (c.includes('politics')) return Gavel;
+        if (c.includes('news')) return Newspaper;
+        if (c.includes('pop') || c.includes('culture')) return Tv;
+        return Tag;
+    };
+
+    const SelectorIcon = getCategoryIcon(category);
 
     useEffect(() => {
         if (isOpen && publicKey) {
@@ -280,7 +292,7 @@ export const CreateMarketModal = ({ isOpen, onClose }: CreateMarketModalProps) =
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-1">
                                             <label className="block text-[10px] font-black text-black/40 uppercase tracking-widest italic flex items-center gap-1">
-                                                <Tag size={10} /> CATEGORY
+                                                <SelectorIcon size={10} className="text-orange-600" /> CATEGORY
                                             </label>
                                             <select
                                                 className="w-full bg-white border-2 border-black px-4 py-3 text-black font-black uppercase tracking-tighter text-sm focus:bg-orange-50 focus:outline-none cursor-pointer"

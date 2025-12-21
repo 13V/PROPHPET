@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { TrendingUp, Users, DollarSign, Clock, ArrowUpRight, Activity } from 'lucide-react';
+import { TrendingUp, Users, DollarSign, Clock, ArrowUpRight, Activity, Zap, Swords, Gavel, Newspaper, Tv, Globe } from 'lucide-react';
 import { Sparkline } from './Sparkline';
 
 import { useState, useEffect } from 'react';
@@ -227,6 +227,20 @@ export const FeaturedMarket = ({ data, onOpenCreateModal, onOpenExpanded }: Feat
 
     const isExpired = Date.now() > endTime * 1000;
 
+    const getCategoryIcon = (cat: string) => {
+        const c = cat.toLowerCase();
+        const q = question.toLowerCase();
+        if (q.includes(' vs ') || q.includes(' vs. ') || c.includes('sport')) return Swords;
+        if (c.includes('crypto')) return Zap;
+        if (c.includes('politics')) return Gavel;
+        if (c.includes('news')) return Newspaper;
+        if (c.includes('pop') || c.includes('culture') || c.includes('movie')) return Tv;
+        if (c.includes('science') || c.includes('tech')) return Globe;
+        return Activity;
+    };
+
+    const CategoryIcon = getCategoryIcon(category);
+
     return (
         <div onClick={onOpenExpanded} className="relative group overflow-hidden neo-border neo-shadow bg-white cursor-pointer">
             {/* Background Dot Grid */}
@@ -238,9 +252,12 @@ export const FeaturedMarket = ({ data, onOpenCreateModal, onOpenExpanded }: Feat
 
                     {/* Header Badges */}
                     <div className="flex items-center gap-3 mb-6">
-                        <span className="bg-black text-white text-[10px] font-black px-3 py-1 border border-black uppercase tracking-[0.2em]">
-                            MARKET_ALERT
-                        </span>
+                        <div className="flex items-center gap-2 px-3 py-1 bg-black text-white border border-black italic">
+                            <CategoryIcon size={12} strokeWidth={3} className="text-orange-500" />
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em]">
+                                MARKET_ALERT
+                            </span>
+                        </div>
                         {polymarketId && !isOnChain && (
                             <span className="bg-orange-600 text-white text-[10px] font-black px-2 py-1 border border-black uppercase tracking-widest animate-pulse">
                                 UNINITIALIZED

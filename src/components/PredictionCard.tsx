@@ -1,6 +1,23 @@
 'use client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TrendingUp, TrendingDown, Wallet, Clock, Trophy, ChevronRight, BarChart3, CheckCircle2 } from 'lucide-react';
+import {
+    TrendingUp,
+    TrendingDown,
+    Wallet,
+    Clock,
+    Trophy,
+    ChevronRight,
+    BarChart3,
+    CheckCircle2,
+    Zap,
+    Swords,
+    Gavel,
+    Newspaper,
+    Tv,
+    Globe,
+    Activity,
+    Shield
+} from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { saveVote, getVote } from '@/utils/voteStorage';
@@ -221,9 +238,23 @@ export const PredictionCard = ({
         if (c.includes('politics')) return { color: '#ef4444', glow: 'rgba(239, 68, 68, 0.15)', text: 'text-red-400', border: 'border-red-500/30' };
         if (c.includes('esports')) return { color: '#ec4899', glow: 'rgba(236, 72, 153, 0.15)', text: 'text-pink-400', border: 'border-pink-500/30' };
         if (c.includes('news')) return { color: '#10b981', glow: 'rgba(16, 185, 129, 0.15)', text: 'text-emerald-400', border: 'border-emerald-500/30' };
-        return { color: '#a855f7', glow: 'rgba(168, 85, 247, 0.15)', text: 'text-purple-400', border: 'border-purple-500/30' }; // Default
+        return { color: '#a855f7', glow: 'rgba(168, 85, 247, 0.15)', text: 'text-purple-400', border: 'border-cyan-500/30' }; // Default
     };
 
+    const getCategoryIcon = (cat: string) => {
+        const c = cat.toLowerCase();
+        const q = question.toLowerCase();
+
+        if (q.includes(' vs ') || q.includes(' vs. ') || c.includes('sport')) return Swords;
+        if (c.includes('crypto')) return Zap;
+        if (c.includes('politics')) return Gavel;
+        if (c.includes('news')) return Newspaper;
+        if (c.includes('pop') || c.includes('culture') || c.includes('movie')) return Tv;
+        if (c.includes('science') || c.includes('tech')) return Globe;
+        return Activity; // Default
+    };
+
+    const CategoryIcon = getCategoryIcon(category);
     const theme = getCategoryTheme(category);
     // Display category override
     const displayCategory = (question.toLowerCase().includes(' vs ') || question.toLowerCase().includes(' vs. ')) ? 'SPORTS' : category;
@@ -430,7 +461,10 @@ export const PredictionCard = ({
             <div className="flex flex-col md:flex-row justify-between items-start gap-3 md:gap-4 z-10">
                 <div className="flex flex-col gap-1.5 flex-1 w-full">
                     <div className="flex items-center gap-2 flex-wrap">
-                        <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 border border-black ${resolved ? 'bg-gray-100 text-gray-500' : 'bg-black text-white'}`}>{displayCategory}</span>
+                        <div className={`flex items-center gap-1.5 px-2 py-0.5 border border-black ${resolved ? 'bg-gray-100 text-gray-500' : 'bg-black text-white'}`}>
+                            <CategoryIcon size={10} strokeWidth={3} className={resolved ? 'text-gray-500' : 'text-orange-500'} />
+                            <span className="text-[10px] font-black uppercase tracking-widest">{displayCategory}</span>
+                        </div>
 
                         {/* Lazy Init Badge */}
                         {polymarketId && !isOnChain && !resolved && (

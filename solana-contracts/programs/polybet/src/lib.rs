@@ -16,8 +16,8 @@ pub mod polybet {
         config.authority = ctx.accounts.authority.key();
         config.dev_vault = dev_vault;
         config.polybet_token_mint = polybet_token_mint;
-        config.burn_fee_bps = 300; // 3%
-        config.dev_fee_bps = 200;  // 2%
+        config.burn_fee_bps = 0;    // 0%
+        config.dev_fee_bps = 500;   // 5%
         config.creator_fee_bps = 500; // 5%
         config.bump = ctx.bumps.config;
         Ok(())
@@ -206,10 +206,13 @@ pub mod polybet {
         require!(vote_record.amount > 0, MarketError::NoActiveBet);
         require!(!vote_record.claimed, MarketError::AlreadyClaimed);
 
-        // 90% refund
+        // Refund = Total - (Burn + Dev + Creator fees)
+        let config = &ctx.accounts.config;
+        let total_fee_bps = (config.burn_fee_bps as u32 + config.dev_fee_bps as u32 + config.creator_fee_bps as u32);
+        
         let refund_amount = (vote_record.amount as u128)
-            .checked_mul(90).unwrap()
-            .checked_div(100).unwrap() as u64;
+            .checked_mul(10000 - total_fee_bps as u128).unwrap()
+            .checked_div(10000).unwrap() as u64;
 
         // Update state
         market.totals[vote_record.outcome_index as usize] -= vote_record.amount;
@@ -452,9 +455,12 @@ pub mod polybet {
         let total_winning_pool = market.totals[winning_outcome_index];
 
         let total_pool = market.total_liquidity;
+        let config = &ctx.accounts.config;
+        let total_fee_bps = (config.burn_fee_bps as u32 + config.dev_fee_bps as u32 + config.creator_fee_bps as u32);
+        
         let distributable_pool = (total_pool as u128)
-            .checked_mul(90).unwrap()
-            .checked_div(100).unwrap() as u64; // This 90 should ideally come from config too: 10000 - bps sum
+            .checked_mul(10000 - total_fee_bps as u128).unwrap()
+            .checked_div(10000).unwrap() as u64; 
 
         // Precision safety: (UserBet * Distributable) / TotalWinning
         let payout = (vote_record.amount as u128)
@@ -609,6 +615,7 @@ pub struct EarlyExit<'info> {
     #[account(mut)]
     pub market: Account<'info, Market>,
     
+    pub config: Account<'info, GlobalConfig>,
     #[account(mut, seeds = [b"vote", market.key().as_ref(), user.key().as_ref()], bump)]
     pub vote_record: Account<'info, VoteRecord>,
     
