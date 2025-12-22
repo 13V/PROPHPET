@@ -2,6 +2,9 @@
 seeds = false
 skip-lint = false
 
+[toolchain]
+anchor_version = "0.29.0"
+
 [programs.localnet]
 polybet = "FEbCHi9LXo1AxKTtv3N9ZaHbs64Zq85b7dYPmjwVXYfv"
 
