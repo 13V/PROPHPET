@@ -1,6 +1,6 @@
 import { Connection, PublicKey, Transaction, SystemProgram } from '@solana/web3.js';
 import { getProgram, getProvider, PROGRAM_ID, TOKEN_PROGRAM_ID, getVotePDA, getATA, BETTING_MINT } from '@/services/web3';
-import { BN, web3 } from '@coral-xyz/anchor';
+import { BN } from '@coral-xyz/anchor';
 
 export interface Vote {
     predictionId: number;
@@ -55,7 +55,7 @@ export async function saveVote(vote: Vote, wallet: any): Promise<string | void> 
                     vaultToken: vaultToken,
                     userToken: userToken,
                     user: wallet.publicKey,
-                    systemProgram: web3.SystemProgram.programId,
+                    systemProgram: SystemProgram.programId,
                     tokenProgram: TOKEN_PROGRAM_ID,
                 })
                 .rpc();

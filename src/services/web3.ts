@@ -1,10 +1,10 @@
-import { Connection, PublicKey, Transaction } from '@solana/web3.js';
-import { Program, AnchorProvider, web3, Idl, BN } from '@coral-xyz/anchor';
+import { Connection, PublicKey, Transaction, Commitment, SystemProgram, SYSVAR_RENT_PUBKEY } from '@solana/web3.js';
+import { Program, AnchorProvider, Idl, BN } from '@coral-xyz/anchor';
 import idl from '@/idl/polybet.json';
 
 const network = process.env.NEXT_PUBLIC_RPC_URL || 'https://solana-rpc.publicnode.com';
 const opts = {
-    preflightCommitment: "processed" as web3.Commitment,
+    preflightCommitment: "processed" as Commitment,
 };
 
 // Program ID (Prophet/Polybet Contract)
@@ -55,7 +55,7 @@ export const getProgram = (wallet: any) => {
     if (!provider) return null;
 
     // Cast JSON to IDL type unsafely for now to avoid TS hell with custom IDLs
-    return new Program(idl as unknown as Idl, PROGRAM_ID, provider);
+    return new Program(idl as any, provider);
 };
 
 
@@ -113,9 +113,9 @@ export const initializeProtocol = async (wallet: any, mint: PublicKey) => {
             treasuryVault,
             mint,
             authority: wallet.publicKey,
-            systemProgram: web3.SystemProgram.programId,
+            systemProgram: SystemProgram.programId,
             tokenProgram: TOKEN_PROGRAM_ID,
-            rent: web3.SYSVAR_RENT_PUBKEY,
+            rent: SYSVAR_RENT_PUBKEY,
         })
         .rpc();
 };
@@ -151,7 +151,7 @@ export const initializeMarketOnChain = async (
         .accounts({
             market,
             authority: wallet.publicKey,
-            systemProgram: web3.SystemProgram.programId,
+            systemProgram: SystemProgram.programId,
         })
         .rpc();
 };
