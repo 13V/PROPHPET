@@ -15,11 +15,11 @@ export const PROGRAM_ID = new PublicKey(
 
 // Token used for betting ($PREDICT) - Pump.fun deployment
 // If not set, we'll use a placeholder and handle it in the UI
-const MINT_ENV = process.env.NEXT_PUBLIC_BETTING_MINT;
-export const IS_TOKEN_LIVE = !!MINT_ENV && MINT_ENV !== 'TBD';
+const MINT_ENV = process.env.NEXT_PUBLIC_BETTING_MINT || '4kTwv7sEEhdp9CZnw3B9h639HZwVygMmmxi6uuFLpump';
+export const IS_TOKEN_LIVE = true;
 
 export const BETTING_MINT = new PublicKey(
-    IS_TOKEN_LIVE ? MINT_ENV! : '11111111111111111111111111111111' // System Program as fallback
+    '4kTwv7sEEhdp9CZnw3B9h639HZwVygMmmxi6uuFLpump'
 );
 
 // Treasury Wallet for collecting protocol taxes
