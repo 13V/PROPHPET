@@ -19,6 +19,8 @@ export const MarketWarRoom = ({ isOpen, onClose, market }: MarketWarRoomProps) =
     const [pythData, setPythData] = useState<number[] | null>(null);
     const [lastPriceUpdate, setLastPriceUpdate] = useState(0);
 
+    if (!market) return null;
+
     // Extraction Logic for "Up/Down" markets
     // Priority: Question -> Slug -> EventTitle -> Description
     const findTarget = () => {
@@ -190,8 +192,6 @@ export const MarketWarRoom = ({ isOpen, onClose, market }: MarketWarRoomProps) =
             }
         }
     }, [isOpen, market, isCrypto]);
-
-    if (!market) return null;
 
     // Dynamic Category Coloring (Professional Themes)
     const getCategoryTheme = (cat: string) => {
