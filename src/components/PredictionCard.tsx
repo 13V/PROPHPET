@@ -498,13 +498,23 @@ export const PredictionCard = ({
 
             {/* Team Background Watermarks */}
             {teams && (
-                <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden transition-opacity opacity-20 group-hover:opacity-40">
-                    <div className="absolute -left-8 top-1/2 -translate-y-1/2 w-64 h-64 rotate-[-12deg]">
-                        <TeamLogo name={teams[0]} className="w-full h-full" />
-                    </div>
-                    <div className="absolute -right-8 top-1/2 -translate-y-1/2 w-64 h-64 rotate-[12deg]">
-                        <TeamLogo name={teams[1]} className="w-full h-full" />
-                    </div>
+                <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden transition-opacity opacity-30 group-hover:opacity-50">
+                    {teams[0] === teams[1] ? (
+                        // Single Asset Mode (Crypto/Stocks) - One Large Centered Logo
+                        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rotate-12 opacity-80">
+                            <TeamLogo name={teams[0]} className="w-full h-full drop-shadow-xl" />
+                        </div>
+                    ) : (
+                        // Versus Mode (Sports) - Two Opposing Logos
+                        <>
+                            <div className="absolute -left-8 top-1/2 -translate-y-1/2 w-64 h-64 rotate-[-12deg]">
+                                <TeamLogo name={teams[0]} className="w-full h-full drop-shadow-lg" />
+                            </div>
+                            <div className="absolute -right-8 top-1/2 -translate-y-1/2 w-64 h-64 rotate-[12deg]">
+                                <TeamLogo name={teams[1]} className="w-full h-full drop-shadow-lg" />
+                            </div>
+                        </>
+                    )}
                 </div>
             )}
             {/* Market Closed Banner */}
