@@ -176,6 +176,8 @@ export const PredictionCard = ({
     };
 
     const displayTitle = reconstructTitle();
+    // Display category override
+    const displayCategory = (question.toLowerCase().includes(' vs ') || question.toLowerCase().includes(' vs. ')) ? 'SPORTS' : category;
 
     // Team Parsing Logic for Sports (Enhanced)
     const getTeams = () => {
@@ -294,8 +296,6 @@ export const PredictionCard = ({
 
     const CategoryIcon = getCategoryIcon(category);
     const theme = getCategoryTheme(category);
-    // Display category override
-    const displayCategory = (question.toLowerCase().includes(' vs ') || question.toLowerCase().includes(' vs. ')) ? 'SPORTS' : category;
 
     useEffect(() => {
         if (publicKey) {
