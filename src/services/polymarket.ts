@@ -35,29 +35,36 @@ export async function fetchPolymarketTrending(limit = 50, offset = 0, sortBy = '
             }
 
             let response;
-            let usedSource = 'Client-Proxy';
+            let usedSource = 'Internal-API';
 
             try {
-                // Priority 1: Client Proxy
-                console.log('Fetching via corsproxy.io...');
-                const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(gammaUrl)}`;
-                response = await fetch(proxyUrl);
-                if (!response.ok) throw new Error('Proxy 1 failed');
-            } catch (proxyError) {
-                console.warn('Proxy 1 failed, attempting fallback...', proxyError);
+                // Priority 1: Robust Internal Relay (Server-side, no CORS)
+                console.log('Fetching via Internal Relay...');
+                let internalUrl = `/api/markets?limit=${limit}&offset=${offset}&active=${active}&closed=${closed}&order=${sortBy}&ascending=${ascending}`;
+                if (tag) internalUrl += `&tag_slug=${tag}`;
 
-                // Priority 2: Alternative Proxy
+                response = await fetch(internalUrl);
+                if (!response.ok) throw new Error('Internal Relay failed');
+            } catch (internalError) {
+                console.warn('Internal Relay failed, attempting CORS proxy...', internalError);
+
+                // Priority 2: Client Proxy (corsproxy.io)
                 try {
+                    usedSource = 'corsproxy';
+                    let gammaUrl = `https://gamma-api.polymarket.com/events?active=${active}&closed=${closed}&order=${sortBy}&ascending=${ascending}&limit=${limit}&offset=${offset}`;
+                    if (tag) gammaUrl += `&tag_slug=${tag}`;
+
+                    const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(gammaUrl)}`;
+                    response = await fetch(proxyUrl);
+                    if (!response.ok) throw new Error('Proxy 1 failed');
+                } catch (proxyError) {
+                    // Priority 3: Alternative Proxy (allorigins)
                     usedSource = 'allorigins';
+                    let gammaUrl = `https://gamma-api.polymarket.com/events?active=${active}&closed=${closed}&order=${sortBy}&ascending=${ascending}&limit=${limit}&offset=${offset}`;
+                    if (tag) gammaUrl += `&tag_slug=${tag}`;
+
                     const proxyUrl2 = `https://api.allorigins.win/raw?url=${encodeURIComponent(gammaUrl)}`;
                     response = await fetch(proxyUrl2);
-                    if (!response.ok) throw new Error('Proxy 2 failed');
-                } catch (internalError) {
-                    // Priority 3: Internal API (Likely blocked, but worth a shot)
-                    usedSource = 'Internal-API';
-                    console.log('Fallback to Internal API...');
-                    const internalUrl = `/api/markets?limit=${limit}&offset=${offset}`; // Tags not supported on simple fallback
-                    response = await fetch(internalUrl);
                 }
             }
 
@@ -359,13 +366,13 @@ export async function fetchDailyMarkets(requiredCount = 20): Promise<any[]> {
         let added = 0;
         for (const item of items) {
             if (added >= limit) break;
-            if (collected.length >= TARGET_LIMIT) break;
+            if (collected.length >= (requiredCount || TARGET_LIMIT)) break;
 
             if (!seenIds.has(item.id)) {
-                // 1. Volume Filter (Stricter: > $5k to be considered "High Volume")
-                if (item.totalLiquidity < 5000) continue;
+                // 1. Volume Filter (Relaxed: > $1k to ensure we see upcoming items)
+                if (item.totalLiquidity < 1000) continue;
 
-                // 2. Short-Term Filter (Strict Daily: < 24h)
+                // 2. Time Filter (Strict Daily: < 24h for high frequency)
                 if (!item.endTime) continue;
                 const hoursLeft = (item.endTime * 1000 - Date.now()) / (1000 * 60 * 60);
 
@@ -378,45 +385,36 @@ export async function fetchDailyMarkets(requiredCount = 20): Promise<any[]> {
         }
     };
 
-    console.log("Fetching Short-Term High-Volume Markets (Limit 20)...");
+    console.log("Fetching Highest Volume Daily Markets...");
 
     try {
-        // 1. Crypto Majors (Deep search for daily options)
-        // BTC
-        const btcBatch = await fetchPolymarketTrending(100, 0, 'volume', false, 'bitcoin');
-        addUnique(btcBatch, 3);
+        // 1. Crypto Majors (Daily)
+        const btcBatch = await fetchPolymarketTrending(50, 0, 'volume', false, 'bitcoin');
+        addUnique(btcBatch, 5);
 
-        // ETH
-        const ethBatch = await fetchPolymarketTrending(100, 0, 'volume', false, 'ethereum');
-        addUnique(ethBatch, 3);
+        const ethBatch = await fetchPolymarketTrending(50, 0, 'volume', false, 'ethereum');
+        addUnique(ethBatch, 5);
 
-        // SOL
-        const solBatch = await fetchPolymarketTrending(100, 0, 'volume', false, 'solana');
-        addUnique(solBatch, 3);
+        // 2. Sports (Daily)
+        const sportsBatch = await fetchPolymarketTrending(100, 0, 'volume', false, 'sports');
+        addUnique(sportsBatch, 10);
 
-        // 2. Sports (Deep search for tonight's games) 
-        const sportsBatch = await fetchPolymarketTrending(300, 0, 'volume', false, 'sports');
-        addUnique(sportsBatch, 8);
+        // 3. Politics (Daily)
+        const politicsBatch = await fetchPolymarketTrending(50, 0, 'volume', false, 'politics');
+        addUnique(politicsBatch, 5);
 
-        // 3. News/Politics
-        const politicsBatch = await fetchPolymarketTrending(100, 0, 'volume', false, 'politics');
-        addUnique(politicsBatch, 3);
-
-        // 4. Fill remaining with generic trending (Iterative Search)
+        // 4. General Trending Daily (Deep Search)
         let page = 0;
-        while (collected.length < TARGET_LIMIT && page < 5) { // Try up to 5 pages (500 items)
-            console.log(`Deep searching general markets page ${page}...`);
+        while (collected.length < requiredCount && page < 10) {
             const generalBatch = await fetchPolymarketTrending(100, page * 100, 'volume', false);
             if (generalBatch.length === 0) break;
-
-            addUnique(generalBatch, TARGET_LIMIT - collected.length);
+            addUnique(generalBatch, requiredCount - collected.length);
             page++;
         }
 
     } catch (e) {
-        console.error("Curation failed:", e);
+        console.error("Discovery failed:", e);
     }
 
-    // sort by volume descending to ensure "High Volume" feel
     return collected.sort((a, b) => b.totalLiquidity - a.totalLiquidity);
 }

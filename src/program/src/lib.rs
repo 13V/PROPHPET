@@ -48,13 +48,13 @@ pub mod polybet {
         Ok(())
     }
 
-    /// 3. Place Bet (Goes to Global Vault)
+    /// 3. Place Bet (90/10 Split Implemented)
     pub fn place_vote(ctx: Context<PlaceVote>, outcome_index: u8, amount: u64) -> Result<()> {
         let market = &mut ctx.accounts.market;
         let clock = Clock::get()?;
         require!(clock.unix_timestamp < market.end_timestamp, PolybetError::MarketEnded);
         
-        // 90/10 Split: 90% to winners, 10% to Buyback Fund
+        // 90/10 Split: 90% to winners, 10% to Buyback Fund (Dev Vault)
         let total_payout = if market.outcome_totals[outcome_index as usize] > 0 {
             (amount as u128)
                 .checked_mul(90).unwrap() 
@@ -76,8 +76,9 @@ pub mod polybet {
         vote.outcome_index = outcome_index;
         vote.amount = amount;
         vote.locked_payout = total_payout;
-        // The 10% Buyback Tax is calculated relative to the payout
-        vote.locked_dev_fee = (total_payout as u128).checked_mul(11).unwrap().checked_div(100).unwrap() as u64; // Approx 10% of total
+        
+        // Solid 10% Protocol Tax for Buyback
+        vote.locked_dev_fee = (total_payout as u128).checked_mul(11).unwrap().checked_div(100).unwrap() as u64; // Approx 10% of losing pot equivalent
 
         market.total_pot = market.total_pot.checked_add(amount).unwrap();
         market.outcome_totals[outcome_index as usize] = market.outcome_totals[outcome_index as usize].checked_add(amount).unwrap();
@@ -86,7 +87,7 @@ pub mod polybet {
 
     /// 4. Claim Winnings (Paid from Global Vault)
     pub fn claim_winnings(ctx: Context<ClaimWinnings>) -> Result<()> {
-        let (payout, c_fee, d_fee) = {
+        let (payout, d_fee) = {
             let market = &ctx.accounts.market;
             let vote = &ctx.accounts.vote;
             require!(market.resolved, PolybetError::MarketActive);
@@ -174,8 +175,6 @@ pub struct ClaimWinnings<'info> {
     pub treasury_vault: Account<'info, TokenAccount>,
     #[account(mut)]
     pub user_token: Account<'info, TokenAccount>,
-    #[account(mut)]
-    pub creator_token: Account<'info, TokenAccount>,
     #[account(mut)]
     pub dev_token: Account<'info, TokenAccount>,
     #[account(mut)]

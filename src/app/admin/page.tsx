@@ -55,6 +55,7 @@ export default function AdminPage() {
     const [polyEvents, setPolyEvents] = useState<any[]>([]);
     const [isLoadingPoly, setIsLoadingPoly] = useState(false);
     const [treasuryVault, setTreasuryVault] = useState<string>('');
+    const [vaultBalance, setVaultBalance] = useState<string>('0.00');
     const [protocolStatus, setProtocolStatus] = useState<'loading' | 'uninitialized' | 'active'>('loading');
 
     useEffect(() => {
@@ -99,6 +100,19 @@ export default function AdminPage() {
         try {
             const vault = await getTreasuryVaultPDA();
             setTreasuryVault(vault.toString());
+
+            // Try to fetch balance if connection is available
+            const { Connection } = await import('@solana/web3.js');
+            const connection = new Connection(process.env.NEXT_PUBLIC_RPC_URL || 'https://api.mainnet-beta.solana.com');
+
+            try {
+                const balance = await connection.getTokenAccountBalance(vault);
+                setVaultBalance(balance.value.uiAmountString || '0.00');
+            } catch (e) {
+                // Account might not exist yet if not initialized
+                setVaultBalance('0.00');
+            }
+
             setProtocolStatus('active');
         } catch (e) {
             setProtocolStatus('uninitialized');
@@ -118,23 +132,36 @@ export default function AdminPage() {
 
     const handleMirrorMarket = async (event: any) => {
         if (!publicKey) return;
-        const confirmed = window.confirm(`Mirror "${event.question}" as a Daily market?`);
+        const confirmed = window.confirm(`Mirror "${event.question}" as a Daily market?\n\nThis will apply the "Reverse-Math" fix to ensure winning payouts match Polymarket odds exactly after our 10% Protocol Tax.`);
         if (!confirmed) return;
 
         try {
+            // Reverse-Math for 90/10 Split:
+            // We want (0.9 * Pot) / OutcomeTotal = TargetMultiplier
+            // OutcomeTotal = (0.9 / TargetMultiplier) * Pot
+            // So Weight = (0.9 / TargetMultiplier)
+
+            const totalLiquidity = event.totals.reduce((a: number, b: number) => a + b, 0);
             const weights = event.totals.map((t: number) => {
-                const total = event.totals.reduce((a: number, b: number) => a + b, 0);
-                return Math.floor((t / total) * 1000);
+                const probability = t / totalLiquidity;
+                // TargetMultiplier = 1 / probability
+                // Weight = 0.9 / (1/probability) = 0.9 * probability
+                return Math.floor(probability * 900); // Scale to 1000 baselines
             });
+
+            // Fill remaining weight slots with 0 if fewer than 8 outcomes
+            const finalWeights = [...weights];
+            while (finalWeights.length < 8) finalWeights.push(0);
+
             const tx = await initializeMarketOnChain(
                 window.solana,
                 event.question,
                 event.endTime,
                 event.outcomes.length,
                 1000000,
-                weights
+                finalWeights as [number, number, number, number, number, number, number, number]
             );
-            alert("Daily Market Mirrored! TX: " + tx);
+            alert("Daily Market Mirrored with Fixed Odds! TX: " + tx);
         } catch (e: any) {
             alert("Error: " + e.message);
         }
@@ -227,13 +254,23 @@ export default function AdminPage() {
                         {/* Protocol Management */}
                         <div className="border-4 border-black p-8 bg-gray-50">
                             <h2 className="text-2xl font-black uppercase italic mb-6 tracking-tighter flex items-center gap-3">
-                                <Shield className="text-orange-600" /> PROTOCOL_OVERRIDE
+                                <Shield className="text-orange-600" /> PROTOCOL_RESERVES
                             </h2>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div className="space-y-4">
-                                    <div>
-                                        <label className="text-[10px] font-mono font-bold text-black/40 uppercase">Treasury Vault PDA</label>
-                                        <div className="text-xs font-mono font-black break-all bg-white border-2 border-black p-3">{treasuryVault || 'OFFLINE'}</div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="text-[10px] font-mono font-bold text-black/40 uppercase">Treasury Vault (PDA)</label>
+                                            <div className="text-xs font-mono font-black break-all bg-white border-2 border-black p-3 select-all cursor-pointer" title="Click to copy" onClick={() => { navigator.clipboard.writeText(treasuryVault); alert('Copied!'); }}>
+                                                {treasuryVault || 'OFFLINE'}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-mono font-bold text-black/40 uppercase">Current Balance</label>
+                                            <div className="text-2xl font-black bg-white border-2 border-black p-2 text-center text-orange-600">
+                                                {vaultBalance} <span className="text-[10px] opacity-40">PREDICT</span>
+                                            </div>
+                                        </div>
                                     </div>
                                     <button
                                         onClick={handleInitializeProtocol}
@@ -242,8 +279,10 @@ export default function AdminPage() {
                                         Initialize Global Protocol
                                     </button>
                                 </div>
-                                <div className="flex items-center text-[11px] font-mono font-bold text-black/60 uppercase p-4 border-2 border-dashed border-black/20">
-                                    Initialization creates the central Treasury Vault. Required for global payout logic. Perform once per Mainnet deployment.
+                                <div className="space-y-4 text-[11px] font-mono font-bold text-black/60 uppercase p-4 border-2 border-dashed border-black/20">
+                                    <p className="text-black font-black">⚠️ SEED LIQUIDITY WARNING:</p>
+                                    <p>To initialize markets with "Virtual Liquidity" (e.g., matching a 1,000 token pot), you MUST send at least that amount to the **Treasury Vault address** above.</p>
+                                    <p>If the vault is empty, winners will not be able to claim their payouts.</p>
                                 </div>
                             </div>
                         </div>
@@ -261,51 +300,58 @@ export default function AdminPage() {
                             </div>
 
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                {polyEvents.map((event) => {
-                                    const hoursLeft = Math.max(0, (event.endTime * 1000 - Date.now()) / (1000 * 60 * 60));
-                                    const isOnChain = onChainMarkets.some(m => m.polymarketId === event.polymarketId);
+                                {polyEvents.length > 0 ? (
+                                    polyEvents.map((event) => {
+                                        const hoursLeft = Math.max(0, (event.endTime * 1000 - Date.now()) / (1000 * 60 * 60));
+                                        const isOnChain = onChainMarkets.some(m => m.polymarketId === event.polymarketId);
 
-                                    return (
-                                        <div key={event.id} className={`border-2 border-black p-5 relative overflow-hidden flex flex-col justify-between group ${isOnChain ? 'bg-orange-50/30' : 'bg-white'}`}>
-                                            <div className="flex items-center justify-between mb-2">
-                                                <div className="flex items-center gap-2">
-                                                    {isOnChain ? (
-                                                        <span className="bg-green-600 text-white text-[8px] font-black px-2 py-0.5 uppercase tracking-widest">LIVE_ON_CHAIN</span>
-                                                    ) : (
-                                                        <span className="bg-black text-white text-[8px] font-black px-2 py-0.5 uppercase tracking-widest">READY_FOR_INIT</span>
-                                                    )}
+                                        return (
+                                            <div key={event.id} className={`border-2 border-black p-5 relative overflow-hidden flex flex-col justify-between group ${isOnChain ? 'bg-orange-50/30' : 'bg-white'}`}>
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <div className="flex items-center gap-2">
+                                                        {isOnChain ? (
+                                                            <span className="bg-green-600 text-white text-[8px] font-black px-2 py-0.5 uppercase tracking-widest">LIVE_ON_CHAIN</span>
+                                                        ) : (
+                                                            <span className="bg-black text-white text-[8px] font-black px-2 py-0.5 uppercase tracking-widest">READY_FOR_INIT</span>
+                                                        )}
+                                                    </div>
+                                                    <div className="text-[8px] font-black uppercase italic opacity-40">
+                                                        ENDS: {hoursLeft.toFixed(1)}H
+                                                    </div>
                                                 </div>
-                                                <div className="text-[8px] font-black uppercase italic opacity-40">
-                                                    ENDS: {hoursLeft.toFixed(1)}H
+
+                                                <div className="mb-4">
+                                                    <h4 className="font-black text-sm uppercase leading-tight pr-12">{event.question}</h4>
+                                                    <div className="flex gap-2 mt-3">
+                                                        {event.outcomes.map((o: string, idx: number) => (
+                                                            <span key={idx} className="text-[9px] font-mono font-bold px-2 py-0.5 border border-black/10">
+                                                                {o}: {(event.totals[idx] / Math.max(1, event.totals.reduce((a: number, b: number) => a + b, 0)) * 100).toFixed(0)}%
+                                                            </span>
+                                                        ))}
+                                                    </div>
                                                 </div>
+
+                                                {isOnChain ? (
+                                                    <div className="w-full py-3 bg-gray-100 text-black/40 text-[10px] font-black uppercase tracking-widest text-center border-2 border-dashed border-black/10">
+                                                        SYNC_COMPLETE
+                                                    </div>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => handleMirrorMarket(event)}
+                                                        className="w-full py-4 md:py-3 bg-black text-white text-[10px] font-black uppercase tracking-widest hover:bg-orange-600 transition-colors active:bg-orange-700"
+                                                    >
+                                                        INITIALIZE_ON_MAINNET
+                                                    </button>
+                                                )}
                                             </div>
-
-                                            <div className="mb-4">
-                                                <h4 className="font-black text-sm uppercase leading-tight pr-12">{event.question}</h4>
-                                                <div className="flex gap-2 mt-3">
-                                                    {event.outcomes.map((o: string, idx: number) => (
-                                                        <span key={idx} className="text-[9px] font-mono font-bold px-2 py-0.5 border border-black/10">
-                                                            {o}: {(event.totals[idx] / event.totals.reduce((a: number, b: number) => a + b, 0) * 100).toFixed(0)}%
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            </div>
-
-                                            {isOnChain ? (
-                                                <div className="w-full py-3 bg-gray-100 text-black/40 text-[10px] font-black uppercase tracking-widest text-center border-2 border-dashed border-black/10">
-                                                    SYNC_COMPLETE
-                                                </div>
-                                            ) : (
-                                                <button
-                                                    onClick={() => handleMirrorMarket(event)}
-                                                    className="w-full py-4 md:py-3 bg-black text-white text-[10px] font-black uppercase tracking-widest hover:bg-orange-600 transition-colors active:bg-orange-700"
-                                                >
-                                                    INITIALIZE_ON_MAINNET
-                                                </button>
-                                            )}
-                                        </div>
-                                    );
-                                })}
+                                        );
+                                    })
+                                ) : (
+                                    <div className="col-span-full py-20 text-center border-2 border-dashed border-black/10">
+                                        <p className="text-black font-black uppercase tracking-widest opacity-40 mb-2">No markets found in discovery feed</p>
+                                        <p className="text-[10px] font-mono font-bold text-black/20 uppercase italic">Try refreshing or check CORS proxy status in logs</p>
+                                    </div>
+                                )}
                             </div>
                         </div>
 

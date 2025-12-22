@@ -10,7 +10,7 @@ const opts = {
 
 // Program ID (Prophet/Polybet Contract)
 export const PROGRAM_ID = new PublicKey(
-    process.env.NEXT_PUBLIC_PROGRAM_ID || 'FEbCHi9LXo1AxKTtv3N9ZaHbs64Zq85b7dYPmjwVXYfv'
+    process.env.NEXT_PUBLIC_PROGRAM_ID || 'F4ftWfZqAq99NK6yWTdA3B65xMwHVeD3MqVcqsvwbKzD'
 );
 
 // Token used for betting ($PREDICT) - Pump.fun deployment

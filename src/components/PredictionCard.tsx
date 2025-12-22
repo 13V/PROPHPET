@@ -615,6 +615,12 @@ export const PredictionCard = ({
                     const isWinning = winningOutcome === index;
                     const isSelected = betMode === index;
 
+                    // Fixed Odds Multiplier Math:
+                    // M = (0.9 * Pot) / OutcomeTotal
+                    const multiplier = totals[index] > 0
+                        ? (0.9 * totalVotes) / totals[index]
+                        : 1.0;
+
                     // User Request: White Buttons
                     const baseColor = 'bg-white hover:bg-gray-50';
                     const finalBorderColor = 'border-black hover:border-orange-500'; // Brutalist default
@@ -645,8 +651,8 @@ export const PredictionCard = ({
                                     <span className={`text-[10px] font-black uppercase tracking-tighter ${textColor}`}>
                                         {!IS_TOKEN_LIVE ? 'LAUNCHING_SOON' : outcomes[index]}
                                     </span>
-                                    <span className={`text-sm font-mono font-black ${textColor}`}>
-                                        {Math.round(outcomeProbabilities[index])}%
+                                    <span className={`text-xs font-mono font-black ${textColor} bg-black/5 px-1 py-0.5 rounded`}>
+                                        {multiplier.toFixed(2)}x
                                     </span>
                                 </span>
                                 {isWinning && <CheckCircle2 size={14} className="text-black shrink-0" />}
@@ -685,9 +691,17 @@ export const PredictionCard = ({
                         </div>
 
                         <div className="flex-1 flex flex-col justify-center gap-4">
-                            <div className="bg-gray-50 border border-black p-3">
-                                <span className="block text-[10px] font-black uppercase tracking-widest text-black/60 mb-1">Outcome Selected</span>
-                                <span className="text-2xl font-black uppercase italic">{outcomes[betMode]}</span>
+                            <div className="flex gap-4">
+                                <div className="flex-1 bg-gray-50 border border-black p-3">
+                                    <span className="block text-[10px] font-black uppercase tracking-widest text-black/60 mb-1">Outcome Selected</span>
+                                    <span className="text-2xl font-black uppercase italic">{outcomes[betMode]}</span>
+                                </div>
+                                <div className="bg-orange-600 text-white border border-black p-3 text-center min-w-[80px]">
+                                    <span className="block text-[10px] font-black uppercase tracking-widest opacity-60 mb-1">Fixed Odds</span>
+                                    <span className="text-2xl font-black italic">
+                                        {(totals[betMode] > 0 ? (0.9 * totalVotes) / totals[betMode] : 1.0).toFixed(2)}x
+                                    </span>
+                                </div>
                             </div>
 
                             <div>
@@ -712,7 +726,7 @@ export const PredictionCard = ({
                                 onClick={(e) => { e.stopPropagation(); confirmBet(); }}
                                 className="w-full bg-black text-white font-black uppercase italic py-4 hover:bg-green-600 transition-colors border-2 border-transparent hover:border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)]"
                             >
-                                CONFIRM TRADE
+                                CONFIRM TRADE {stakeAmount && `(WIN ${(parseFloat(stakeAmount) * (totals[betMode] > 0 ? (0.9 * totalVotes) / totals[betMode] : 1.0)).toFixed(0)})`}
                             </button>
                         </div>
                     </motion.div>

@@ -407,7 +407,12 @@ export const FeaturedMarket = ({ data, onOpenCreateModal, onOpenExpanded }: Feat
                             >
                                 <div className="relative z-10">
                                     <span className="text-2xl block mb-1 truncate uppercase italic font-black">{outcomes[0]}</span>
-                                    <span className="text-[10px] font-black uppercase tracking-widest opacity-60 group-hover:opacity-100">POSITION_A</span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest opacity-60 group-hover:opacity-100 flex items-center justify-between">
+                                        <span>POSITION_A</span>
+                                        <span className="bg-black/5 px-1 py-0.5 rounded text-xs">
+                                            {(totals[0] > 0 ? (0.9 * totalVotes) / totals[0] : 1.0).toFixed(2)}x
+                                        </span>
+                                    </span>
                                 </div>
                             </button>
                             <button
@@ -417,7 +422,12 @@ export const FeaturedMarket = ({ data, onOpenCreateModal, onOpenExpanded }: Feat
                             >
                                 <div className="relative z-10">
                                     <span className="text-2xl block mb-1 truncate uppercase italic font-black">{outcomes[1]}</span>
-                                    <span className="text-[10px] font-black uppercase tracking-widest opacity-60 group-hover:opacity-100">POSITION_B</span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest opacity-60 group-hover:opacity-100 flex items-center justify-between">
+                                        <span>POSITION_B</span>
+                                        <span className="bg-black/5 px-1 py-0.5 rounded text-xs">
+                                            {(totals[1] > 0 ? (0.9 * totalVotes) / totals[1] : 1.0).toFixed(2)}x
+                                        </span>
+                                    </span>
                                 </div>
                             </button>
                         </div>
@@ -444,7 +454,11 @@ export const FeaturedMarket = ({ data, onOpenCreateModal, onOpenExpanded }: Feat
                                 onClick={(e) => { e.stopPropagation(); confirmBet(); }}
                                 className="w-full py-4 bg-black text-white font-black uppercase tracking-[0.2em] text-sm hover:bg-orange-600 transition-colors"
                             >
-                                {isInitializing ? 'LOADING_ORACLE...' : (polymarketId && !isOnChain ? 'INIT_AND_BET' : 'EXECUTE_TRADE')}
+                                {isInitializing ? 'LOADING_ORACLE...' : (
+                                    stakeAmount
+                                        ? `CONFIRM (EST WIN ${(parseFloat(stakeAmount) * (totals[betMode] > 0 ? (0.9 * totalVotes) / totals[betMode] : 1.0)).toFixed(0)})`
+                                        : (polymarketId && !isOnChain ? 'INIT_AND_BET' : 'EXECUTE_TRADE')
+                                )}
                             </button>
                         </div>
                     )}
