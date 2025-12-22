@@ -498,7 +498,7 @@ export const PredictionCard = ({
 
             {/* Team Background Watermarks */}
             {teams && (
-                <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden transition-opacity opacity-30 group-hover:opacity-50">
+                <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden transition-opacity opacity-40 group-hover:opacity-60">
                     {teams[0] === teams[1] ? (
                         // Single Asset Mode (Crypto/Stocks) - One Large Centered Logo
                         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rotate-12 opacity-80">
