@@ -204,11 +204,11 @@ export const TeamLogo = ({ name, className = "", style = {} }: TeamLogoProps) =>
                     {/* Ghost Shield container for structure */}
                     <div className="absolute inset-0 border-8 border-black/[0.08] flex items-center justify-center bg-white/5 opacity-50 rounded-xl"></div>
 
-                    {/* The Logo itself - Grayscale + High Contrast Ops */}
+                    {/* The Logo itself - Full Color */}
                     <img
                         src={logoUrl}
                         alt={name}
-                        className="w-[85%] h-[85%] object-contain opacity-60 grayscale contrast-125 hover:grayscale-0 hover:opacity-100 transition-all duration-500"
+                        className="w-[85%] h-[85%] object-contain contrast-125"
                     />
                 </div>
             ) : (
