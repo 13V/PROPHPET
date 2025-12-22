@@ -626,7 +626,7 @@ export const PredictionCard = ({
                             key={index}
                             onClick={(e) => handleOutcomeClick(e, index)}
                             disabled={isExpired || resolved}
-                            className={`group/btn relative h-16 border-2 overflow-hidden transition-all duration-200 
+                            className={`group/btn relative h-20 border-2 overflow-hidden transition-all duration-200 
                                 ${finalBorderColor} ${baseColor}
                                 ${isSelected ? 'transform translate-y-1 shadow-none' : 'shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_0px_rgba(0,0,0,1)]'}
                                 ${resolved && !isWinning ? 'opacity-40 grayscale' : ''}
