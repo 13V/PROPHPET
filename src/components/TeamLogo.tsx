@@ -22,6 +22,7 @@ const NBA_LOGOS: Record<string, string> = {
     'thunder': 'https://upload.wikimedia.org/wikipedia/en/5/5d/Oklahoma_City_Thunder.svg',
     'blazers': 'https://upload.wikimedia.org/wikipedia/en/2/21/Portland_Trail_Blazers_logo.svg',
     'jazz': 'https://upload.wikimedia.org/wikipedia/en/0/04/Utah_Jazz_logo_%282016%29.svg',
+    'utah jazz': 'https://upload.wikimedia.org/wikipedia/en/0/04/Utah_Jazz_logo_%282016%29.svg',
 
     // Southwest
     'mavericks': 'https://upload.wikimedia.org/wikipedia/en/9/97/Dallas_Mavericks_logo.svg',
@@ -42,6 +43,7 @@ const NBA_LOGOS: Record<string, string> = {
     'cavaliers': 'https://upload.wikimedia.org/wikipedia/en/4/4b/Cleveland_Cavaliers_logo.svg',
     'pistons': 'https://upload.wikimedia.org/wikipedia/en/1/1e/Detroit_Pistons_logo.svg',
     'detroit pistons': 'https://upload.wikimedia.org/wikipedia/en/1/1e/Detroit_Pistons_logo.svg',
+    'detroit': 'https://upload.wikimedia.org/wikipedia/en/1/1e/Detroit_Pistons_logo.svg',
     'pacers': 'https://upload.wikimedia.org/wikipedia/en/1/1b/Indiana_Pacers.svg',
     'bucks': 'https://upload.wikimedia.org/wikipedia/en/4/4a/Milwaukee_Bucks_logo.svg',
 
@@ -109,6 +111,7 @@ const NFL_LOGOS: Record<string, string> = {
     'rams': 'https://upload.wikimedia.org/wikipedia/en/8/8a/Los_Angeles_Rams_logo.svg',
     '49ers': 'https://upload.wikimedia.org/wikipedia/en/7/7b/San_Francisco_49ers_logo.svg',
     'san francisco 49ers': 'https://upload.wikimedia.org/wikipedia/en/7/7b/San_Francisco_49ers_logo.svg',
+    'san francisco': 'https://upload.wikimedia.org/wikipedia/en/7/7b/San_Francisco_49ers_logo.svg',
     'seahawks': 'https://upload.wikimedia.org/wikipedia/en/8/8e/Seattle_Seahawks_logo.svg',
     'niners': 'https://upload.wikimedia.org/wikipedia/en/7/7b/San_Francisco_49ers_logo.svg'
 };

@@ -4,14 +4,14 @@ import { motion } from 'framer-motion';
 import { TrendingUp, User } from 'lucide-react';
 
 const RECENT_BETS = [
-    { user: '0x3a...29b', action: 'EXECUTED YES', market: 'BTC > $100k', amount: '5,000 $PREDICT' },
-    { user: '0x7e...44a', action: 'EXECUTED YES', market: 'SOL to $500', amount: '25,000 $PREDICT', isWhale: true },
-    { user: '0x8f...1a2', action: 'EXECUTED NO', market: 'ETH > $4k', amount: '2,500 $PREDICT' },
-    { user: '0xDb...21c', action: 'EXECUTED NO', market: 'S&P 500 ATH', amount: '100,000 $PREDICT', isWhale: true },
-    { user: '0x1c...99d', action: 'OPENED POSITION', market: 'Memecoin Season', amount: '1,200 $PREDICT' },
-    { user: '0x99...11f', action: 'CREATED_MARKET', market: 'Mars Landing 2030', isNew: true },
-    { user: '0xWh...ale', action: 'EXECUTED YES', market: 'Trump Election', amount: '1M $PREDICT', isWhale: true },
-    { user: '0x44...8ab', action: 'EXECUTED YES', market: 'GTA 6 Release', amount: '8,000 $PREDICT' },
+    { user: '2KF9...Etm', action: 'EXECUTED YES', market: 'BTC > $100k', amount: '5,000 $PREDICT' },
+    { user: 'riQL...FjW', action: 'EXECUTED YES', market: 'SOL to $500', amount: '25,000 $PREDICT', isWhale: true },
+    { user: '8fGa...1a2', action: 'EXECUTED NO', market: 'ETH > $4k', amount: '2,500 $PREDICT' },
+    { user: 'DbXz...21c', action: 'EXECUTED NO', market: 'S&P 500 ATH', amount: '100,000 $PREDICT', isWhale: true },
+    { user: '1cRy...99d', action: 'OPENED POSITION', market: 'Memecoin Season', amount: '1,200 $PREDICT' },
+    { user: '99Pq...11f', action: 'CREATED_MARKET', market: 'Mars Landing 2030', isNew: true },
+    { user: 'Whal...ale', action: 'EXECUTED YES', market: 'Trump Election', amount: '1M $PREDICT', isWhale: true },
+    { user: '44kB...8ab', action: 'EXECUTED YES', market: 'GTA 6 Release', amount: '8,000 $PREDICT' },
 ];
 
 export const ActivityTicker = () => {
