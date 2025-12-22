@@ -615,15 +615,11 @@ export const PredictionCard = ({
                     const isSelected = betMode === index;
                     // User Request: Orange Scheme, 60% opacity -> 100% hover
                     const baseColor = 'bg-orange-500/60 hover:bg-orange-500';
-                    const borderColor = 'border-black'; // Keeping border black for contrast or orange? User said "button colours... orange". Let's stick to black border for the "Swiss" feel or orange? Previous was green/red. I'll use black to match the "Brutalist" outlines usually found in this design, or maybe border-orange-600. Let's use border-black to be safe with the "Swiss" aesthetic, or match the fill. Let's try border-orange-500 to match the fill request, but border-black is safer for visibility. 
-                    // Wait, previous was border-green-600.
-                    // "make both the options 60% Orange opacity".
-                    // I'll make the border black to ensure it is defined, as the background is semi-transparent.
-                    // Actually, "border-2" is on the button.
-                    const finalBorderColor = 'border-orange-600'; // slightly darker than fill
+                    // Border: Orange default -> Black hover
+                    const finalBorderColor = 'border-orange-500 hover:border-black';
 
                     const textColor = 'text-black';
-                    const progressColor = 'bg-white/30'; // White shimmer for progress against orange?
+                    const progressColor = 'bg-white/30';
 
                     return (
                         <button
@@ -643,9 +639,9 @@ export const PredictionCard = ({
                             />
 
                             <div className="relative z-10 flex flex-col justify-between items-start px-3 py-2 h-full">
-                                <span className={`text-sm font-black uppercase italic leading-none ${textColor} flex items-center gap-2 w-full truncate`}>
-                                    <span className="truncate">{outcomes[index]}</span>
-                                    {isWinning && <CheckCircle2 size={14} className="text-black shrink-0" />}
+                                <span className={`text-xs font-black uppercase italic leading-tight ${textColor} flex items-start gap-2 w-full text-left`}>
+                                    <span className="line-clamp-2">{outcomes[index]}</span>
+                                    {isWinning && <CheckCircle2 size={14} className="text-black shrink-0 mt-0.5" />}
                                 </span>
                                 <div className="w-full flex justify-end items-end">
                                     <span className="text-xs font-black font-mono text-black shrink-0">
