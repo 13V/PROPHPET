@@ -1,581 +1,185 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{self, Token, Transfer, TokenAccount};
+use anchor_spl::token_interface::{self, MintInterface, TokenAccountInterface, TokenInterface, TransferInterface};
 
-declare_id!("DcNb3pYGVqo1AdMdJGycDpRPb6d1nPsg3z4x5T714YW");
+declare_id!("F4ftWfZqAq99NK6yWTdA3B65xMwHVeD3MqVcqsvwbKzD");
 
 #[program]
 pub mod polybet {
     use super::*;
 
-    pub fn initialize_config(
-        ctx: Context<InitializeConfig>,
-        dev_vault: Pubkey,
-        polybet_token_mint: Pubkey,
-    ) -> Result<()> {
+    /// 1. Initialize Global Protocol (One-time)
+    pub fn initialize_protocol(ctx: Context<InitializeProtocol>) -> Result<()> {
         let config = &mut ctx.accounts.config;
         config.authority = ctx.accounts.authority.key();
-        config.dev_vault = dev_vault;
-        config.polybet_token_mint = polybet_token_mint;
-        config.burn_fee_bps = 0;    // 0%
-        config.dev_fee_bps = 500;   // 5%
-        config.creator_fee_bps = 500; // 5%
+        config.vault_bump = ctx.bumps.treasury_vault;
         config.bump = ctx.bumps.config;
         Ok(())
     }
 
-    pub fn update_config(
-        ctx: Context<UpdateConfig>,
-        dev_vault: Option<Pubkey>,
-        polybet_token_mint: Option<Pubkey>,
-        burn_fee_bps: Option<u16>,
-        dev_fee_bps: Option<u16>,
-        creator_fee_bps: Option<u16>,
-    ) -> Result<()> {
-        let config = &mut ctx.accounts.config;
-        if let Some(v) = dev_vault { config.dev_vault = v; }
-        if let Some(v) = polybet_token_mint { config.polybet_token_mint = v; }
-        if let Some(v) = burn_fee_bps { config.burn_fee_bps = v; }
-        if let Some(v) = dev_fee_bps { config.dev_fee_bps = v; }
-        if let Some(v) = creator_fee_bps { config.creator_fee_bps = v; }
-        Ok(())
-    }
-
+    /// 2. Initialize Market (No token movement)
     pub fn initialize_market(
         ctx: Context<InitializeMarket>, 
-        market_id: u64,
-        end_time: i64,
-        question: String,
-        outcome_count: u8,
-        outcome_names: [String; 8],
-        oracle_key: Option<Pubkey>,
-        min_bet: u64,
-        max_bet: u64,
-        metadata_url: String,
-        polymarket_id: String
+        question: String, 
+        end_timestamp: i64, 
+        outcomes_count: u8,
+        virtual_liquidity: u64,
+        weights: [u32; 8]
     ) -> Result<()> {
-        require!(outcome_count > 0 && outcome_count <= 8, MarketError::InvalidOutcomeCount);
-        require!(ctx.accounts.mint.key() == ctx.accounts.config.polybet_token_mint, MarketError::InvalidMint);
-        
         let market = &mut ctx.accounts.market;
         market.authority = ctx.accounts.authority.key();
-        market.market_id = market_id;
-        market.end_time = end_time;
         market.question = question;
+        market.end_timestamp = end_timestamp;
+        market.outcomes_count = outcomes_count;
+        market.total_pot = virtual_liquidity;
+        
+        let mut total_weight = 0u32;
+        for i in 0..outcomes_count as usize {
+            total_weight += weights[i];
+        }
+        for i in 0..outcomes_count as usize {
+            if total_weight > 0 {
+                market.outcome_totals[i] = (virtual_liquidity as u128)
+                    .checked_mul(weights[i] as u128).unwrap()
+                    .checked_div(total_weight as u128).unwrap() as u64;
+            }
+        }
         market.resolved = false;
-        market.outcome_count = outcome_count;
-        market.outcome_names = outcome_names;
-        market.totals = [0; 8];
-        market.total_liquidity = 0;
-        market.fees_distributed = false;
-        market.paused = false;
-        market.cancelled = false;
-        market.oracle_key = oracle_key;
-        market.min_bet = min_bet;
-        market.max_bet = max_bet;
-        market.metadata_url = metadata_url;
-        market.polymarket_id = polymarket_id;
         market.bump = ctx.bumps.market;
         Ok(())
     }
 
-    pub fn place_vote(
-        ctx: Context<PlaceVote>, 
-        amount: u64, 
-        outcome_index: u8
-    ) -> Result<()> {
+    /// 3. Place Bet (90/10 Split Implemented)
+    pub fn place_vote(ctx: Context<PlaceVote>, outcome_index: u8, amount: u64) -> Result<()> {
         let market = &mut ctx.accounts.market;
         let clock = Clock::get()?;
+        require!(clock.unix_timestamp < market.end_timestamp, PolybetError::MarketEnded);
         
-        require!(!market.paused, MarketError::MarketPaused);
-        require!(!market.resolved, MarketError::AlreadyResolved);
-        require!(clock.unix_timestamp < market.end_time, MarketError::MarketClosed);
-        require!(outcome_index < market.outcome_count, MarketError::InvalidOutcomeIndex);
-        require!(amount >= market.min_bet, MarketError::BetTooSmall);
-        if market.max_bet > 0 {
-            require!(amount <= market.max_bet, MarketError::BetTooLarge);
-        }
-        
-        let vote_record = &mut ctx.accounts.vote_record;
-
-        // Transfer tokens from User to Vault
-        let cpi_accounts = Transfer {
-            from: ctx.accounts.user_token_account.to_account_info(),
-            to: ctx.accounts.vault_token_account.to_account_info(),
-            authority: ctx.accounts.user.to_account_info(),
-        };
-        let cpi_program = ctx.accounts.token_program.to_account_info();
-        token::transfer(CpiContext::new(cpi_program, cpi_accounts), amount)?;
-
-        // Update State
-        market.totals[outcome_index as usize] += amount;
-        market.total_liquidity += amount;
-
-        // Record User Vote
-        if vote_record.amount > 0 {
-            require!(vote_record.outcome_index == outcome_index, MarketError::MultipleOutcomesNotSupported);
-        }
-
-        vote_record.user = ctx.accounts.user.key();
-        vote_record.market = market.key();
-        vote_record.outcome_index = outcome_index;
-        vote_record.amount += amount; // Allow topping up
-
-        emit!(VotePlacedEvent {
-            user: ctx.accounts.user.key(),
-            market: market.key(),
-            outcome_index,
-            amount,
-        });
-
-        Ok(())
-    }
-
-    pub fn resolve_market(
-        ctx: Context<ResolveMarket>, 
-        outcome_index: u8
-    ) -> Result<()> {
-        let market = &mut ctx.accounts.market;
-        require!(!market.paused, MarketError::MarketPaused);
-        require!(!market.resolved, MarketError::AlreadyResolved);
-        require!(outcome_index < market.outcome_count, MarketError::InvalidOutcomeIndex);
-        
-        market.resolved = true;
-        market.winning_outcome = Some(outcome_index);
-
-        emit!(MarketResolvedEvent {
-            market: market.key(),
-            winning_outcome: outcome_index,
-        });
-
-        Ok(())
-    }
-
-    pub fn sweep_market(ctx: Context<SweepMarket>) -> Result<()> {
-        let market = &mut ctx.accounts.market;
-        let clock = Clock::get()?;
-        
-        require!(market.resolved, MarketError::NotResolved);
-        // Can only sweep 30 days after end_time
-        require!(clock.unix_timestamp > market.end_time + (30 * 24 * 60 * 60), MarketError::SweepTooEarly);
-
-        let amount = ctx.accounts.vault_token_account.amount;
-        require!(amount > 0, MarketError::NoDustToSweep);
-
-        let market_id_bytes = market.market_id.to_le_bytes();
-        let bump_seed = [market.bump];
-        let seeds = &[
-            b"market".as_ref(),
-            market_id_bytes.as_ref(),
-            bump_seed.as_ref(),
-        ];
-        let signer = &[&seeds[..]];
-
-        let cpi_accounts = Transfer {
-            from: ctx.accounts.vault_token_account.to_account_info(),
-            to: ctx.accounts.dev_token_account.to_account_info(),
-            authority: market.to_account_info(),
-        };
-        token::transfer(
-            CpiContext::new_with_signer(ctx.accounts.token_program.to_account_info(), cpi_accounts, signer),
+        // 90/10 Split: 90% to winners, 10% to Buyback Fund (Dev Vault)
+        let total_payout = if market.outcome_totals[outcome_index as usize] > 0 {
+            (amount as u128)
+                .checked_mul(90).unwrap() 
+                .checked_mul(market.total_pot as u128).unwrap()
+                .checked_div(100).unwrap()
+                .checked_div(market.outcome_totals[outcome_index as usize] as u128).unwrap() as u64
+        } else {
             amount
-        )?;
-
-        Ok(())
-    }
-
-    pub fn pause_market(ctx: Context<AdminOnly>, pause: bool) -> Result<()> {
-        let market = &mut ctx.accounts.market;
-        market.paused = pause;
-        Ok(())
-    }
-
-    pub fn cancel_market(ctx: Context<AdminOnly>) -> Result<()> {
-        let market = &mut ctx.accounts.market;
-        require!(!market.resolved, MarketError::AlreadyResolved);
-        market.cancelled = true;
-        market.resolved = true; // Mark as resolved so refunds can happen
-        Ok(())
-    }
-
-    pub fn early_exit(ctx: Context<EarlyExit>) -> Result<()> {
-        let market = &mut ctx.accounts.market;
-        let vote_record = &mut ctx.accounts.vote_record;
-        
-        require!(!market.resolved, MarketError::AlreadyResolved);
-        require!(!market.paused, MarketError::MarketPaused);
-        require!(vote_record.amount > 0, MarketError::NoActiveBet);
-        require!(!vote_record.claimed, MarketError::AlreadyClaimed);
-
-        // Refund = Total - (Burn + Dev + Creator fees)
-        let config = &ctx.accounts.config;
-        let total_fee_bps = (config.burn_fee_bps as u32 + config.dev_fee_bps as u32 + config.creator_fee_bps as u32);
-        
-        let refund_amount = (vote_record.amount as u128)
-            .checked_mul(10000 - total_fee_bps as u128).unwrap()
-            .checked_div(10000).unwrap() as u64;
-
-        // Update state
-        market.totals[vote_record.outcome_index as usize] -= vote_record.amount;
-        market.total_liquidity -= vote_record.amount;
-
-        let market_id_bytes = market.market_id.to_le_bytes();
-        let bump_seed = [market.bump];
-        let seeds = &[
-            b"market".as_ref(),
-            market_id_bytes.as_ref(),
-            bump_seed.as_ref(),
-        ];
-        let signer = &[&seeds[..]];
-
-        let cpi_accounts = Transfer {
-            from: ctx.accounts.vault_token_account.to_account_info(),
-            to: ctx.accounts.user_token_account.to_account_info(),
-            authority: market.to_account_info(),
         };
-        token::transfer(
-            CpiContext::new_with_signer(ctx.accounts.token_program.to_account_info(), cpi_accounts, signer),
-            refund_amount
-        )?;
 
-        vote_record.amount = 0;
-        vote_record.claimed = true; // Mark as claimed to prevent further action
+        // Move tokens to Global Treasury
+        token_interface::transfer(CpiContext::new(ctx.accounts.token_program.to_account_info(), 
+            token_interface::TransferInterface { from: ctx.accounts.user_token.to_account_info(), to: ctx.accounts.treasury_vault.to_account_info(), authority: ctx.accounts.user.to_account_info() }), 
+            amount)?;
 
+        let vote = &mut ctx.accounts.vote;
+        vote.user = ctx.accounts.user.key();
+        vote.market = market.key();
+        vote.outcome_index = outcome_index;
+        vote.amount = amount;
+        vote.locked_payout = total_payout;
+        
+        // Solid 10% Protocol Tax for Buyback
+        vote.locked_dev_fee = (total_payout as u128).checked_mul(11).unwrap().checked_div(100).unwrap() as u64; // Approx 10% of losing pot equivalent
+
+        market.total_pot = market.total_pot.checked_add(amount).unwrap();
+        market.outcome_totals[outcome_index as usize] = market.outcome_totals[outcome_index as usize].checked_add(amount).unwrap();
         Ok(())
     }
 
-    pub fn distribute_fees(ctx: Context<DistributeFees>) -> Result<()> {
-        let market = &mut ctx.accounts.market;
-        let config = &ctx.accounts.config;
-        
-        require!(market.resolved, MarketError::NotResolved);
-        require!(!market.cancelled, MarketError::MarketCancelled);
-        require!(!market.fees_distributed, MarketError::FeesAlreadyDistributed);
-
-        let total_pool = market.total_liquidity;
-        
-        let creator_fee = (total_pool as u128)
-            .checked_mul(config.creator_fee_bps as u128).unwrap()
-            .checked_div(10000).unwrap() as u64;
-        let burn_amount = (total_pool as u128)
-            .checked_mul(config.burn_fee_bps as u128).unwrap()
-            .checked_div(10000).unwrap() as u64;
-        let dev_fee = (total_pool as u128)
-            .checked_mul(config.dev_fee_bps as u128).unwrap()
-            .checked_div(10000).unwrap() as u64;
-
-        let market_id_bytes = market.market_id.to_le_bytes();
-        let bump_seed = [market.bump];
-        let seeds = &[
-            b"market".as_ref(),
-            market_id_bytes.as_ref(),
-            bump_seed.as_ref(),
-        ];
-        let signer = &[&seeds[..]];
-
-        // 1. Transfer Creator Fee
-        if creator_fee > 0 {
-            let cpi_accounts = Transfer {
-                from: ctx.accounts.vault_token_account.to_account_info(),
-                to: ctx.accounts.creator_token_account.to_account_info(),
-                authority: market.to_account_info(),
-            };
-            token::transfer(
-                CpiContext::new_with_signer(ctx.accounts.token_program.to_account_info(), cpi_accounts, signer),
-                creator_fee
-            )?;
-        }
-
-        // 2. Burn
-        if burn_amount > 0 {
-            let cpi_accounts = token::Burn {
-                mint: ctx.accounts.mint.to_account_info(),
-                from: ctx.accounts.vault_token_account.to_account_info(),
-                authority: market.to_account_info(),
-            };
-            token::burn(
-                CpiContext::new_with_signer(ctx.accounts.token_program.to_account_info(), cpi_accounts, signer),
-                burn_amount
-            )?;
-        }
-
-        // 3. Transfer Dev Fee
-        if dev_fee > 0 {
-            let cpi_accounts = Transfer {
-                from: ctx.accounts.vault_token_account.to_account_info(),
-                to: ctx.accounts.dev_token_account.to_account_info(),
-                authority: market.to_account_info(),
-            };
-            token::transfer(
-                CpiContext::new_with_signer(ctx.accounts.token_program.to_account_info(), cpi_accounts, signer),
-                dev_fee
-            )?;
-        }
-
-        market.fees_distributed = true;
-
-        emit!(FeesDistributedEvent {
-            market: market.key(),
-            creator_fee,
-            burn_amount,
-            dev_fee,
-        });
-
-        Ok(())
-    }
-
-    pub fn resolve_via_oracle(
-        ctx: Context<ResolveViaOracle>, 
-        outcome_index: u8
-    ) -> Result<()> {
-        let market = &mut ctx.accounts.market;
-        require!(!market.resolved, MarketError::AlreadyResolved);
-        require!(outcome_index < market.outcome_count, MarketError::InvalidOutcomeIndex);
-        
-        market.resolved = true;
-        market.winning_outcome = Some(outcome_index);
-
-        emit!(MarketResolvedEvent {
-            market: market.key(),
-            winning_outcome: outcome_index,
-        });
-
-        Ok(())
-    }
-
+    /// 4. Claim Winnings (Paid from Global Vault)
     pub fn claim_winnings(ctx: Context<ClaimWinnings>) -> Result<()> {
-        let market = &mut ctx.accounts.market;
-        let vote_record = &mut ctx.accounts.vote_record;
-        
-        require!(market.resolved, MarketError::NotResolved);
-        require!(!market.paused, MarketError::MarketPaused);
-        require!(!vote_record.claimed, MarketError::AlreadyClaimed);
+        let (payout, d_fee) = {
+            let market = &ctx.accounts.market;
+            let vote = &ctx.accounts.vote;
+            require!(market.resolved, PolybetError::MarketActive);
+            require!(!vote.claimed, PolybetError::AlreadyClaimed);
+            require!(vote.outcome_index == market.winner_index.unwrap(), PolybetError::InvalidOutcome);
+            (vote.locked_payout, vote.locked_dev_fee)
+        };
 
-        if !market.fees_distributed && !market.cancelled {
-            // Auto-trigger fee distribution if haven't yet
-            let total_pool = market.total_liquidity;
-            let config = &ctx.accounts.config;
-            
-            let creator_fee = (total_pool as u128)
-                .checked_mul(config.creator_fee_bps as u128).unwrap()
-                .checked_div(10000).unwrap() as u64;
-            let burn_amount = (total_pool as u128)
-                .checked_mul(config.burn_fee_bps as u128).unwrap()
-                .checked_div(10000).unwrap() as u64;
-            let dev_fee = (total_pool as u128)
-                .checked_mul(config.dev_fee_bps as u128).unwrap()
-                .checked_div(10000).unwrap() as u64;
-
-            let market_id_bytes = market.market_id.to_le_bytes();
-            let bump_seed = [market.bump];
-            let seeds = &[
-                b"market".as_ref(),
-                market_id_bytes.as_ref(),
-                bump_seed.as_ref(),
-            ];
-            let signer = &[&seeds[..]];
-
-            // Creator Fee
-            if creator_fee > 0 {
-                let cpi_accounts = Transfer {
-                    from: ctx.accounts.vault_token_account.to_account_info(),
-                    to: ctx.accounts.creator_token_account.to_account_info(),
-                    authority: market.to_account_info(),
-                };
-                token::transfer(
-                    CpiContext::new_with_signer(ctx.accounts.token_program.to_account_info(), cpi_accounts, signer),
-                    creator_fee
-                )?;
-            }
-
-            // Burn
-            if burn_amount > 0 {
-                let cpi_accounts = token::Burn {
-                    mint: ctx.accounts.mint.to_account_info(),
-                    from: ctx.accounts.vault_token_account.to_account_info(),
-                    authority: market.to_account_info(),
-                };
-                token::burn(
-                    CpiContext::new_with_signer(ctx.accounts.token_program.to_account_info(), cpi_accounts, signer),
-                    burn_amount
-                )?;
-            }
-
-            // Dev Fee
-            if dev_fee > 0 {
-                let cpi_accounts = Transfer {
-                    from: ctx.accounts.vault_token_account.to_account_info(),
-                    to: ctx.accounts.dev_token_account.to_account_info(),
-                    authority: market.to_account_info(),
-                };
-                token::transfer(
-                    CpiContext::new_with_signer(ctx.accounts.token_program.to_account_info(), cpi_accounts, signer),
-                    dev_fee
-                )?;
-            }
-
-            market.fees_distributed = true;
-            emit!(FeesDistributedEvent {
-                market: market.key(),
-                creator_fee,
-                burn_amount,
-                dev_fee,
-            });
-        }
-
-        if market.cancelled {
-            // Full Refund Logic
-            let refund = vote_record.amount;
-            let market_id_bytes = market.market_id.to_le_bytes();
-            let bump_seed = [market.bump];
-            let seeds = &[
-                b"market".as_ref(),
-                market_id_bytes.as_ref(),
-                bump_seed.as_ref(),
-            ];
-            let signer = &[&seeds[..]];
-
-            let cpi_accounts = Transfer {
-                from: ctx.accounts.vault_token_account.to_account_info(),
-                to: ctx.accounts.user_token_account.to_account_info(),
-                authority: market.to_account_info(),
-            };
-            token::transfer(
-                CpiContext::new_with_signer(ctx.accounts.token_program.to_account_info(), cpi_accounts, signer),
-                refund
-            )?;
-            vote_record.claimed = true;
-            return Ok(());
-        }
-
-        require!(market.fees_distributed, MarketError::FeesNotDistributed);
-        require!(Some(vote_record.outcome_index) == market.winning_outcome, MarketError::Loser);
-
-        // Calculate Payout
-        let winning_outcome_index = market.winning_outcome.unwrap() as usize;
-        let total_winning_pool = market.totals[winning_outcome_index];
-
-        let total_pool = market.total_liquidity;
-        let config = &ctx.accounts.config;
-        let total_fee_bps = (config.burn_fee_bps as u32 + config.dev_fee_bps as u32 + config.creator_fee_bps as u32);
-        
-        let distributable_pool = (total_pool as u128)
-            .checked_mul(10000 - total_fee_bps as u128).unwrap()
-            .checked_div(10000).unwrap() as u64; 
-
-        // Precision safety: (UserBet * Distributable) / TotalWinning
-        let payout = (vote_record.amount as u128)
-            .checked_mul(distributable_pool as u128).unwrap()
-            .checked_div(total_winning_pool as u128).unwrap() as u64;
-
-        // Transfer Payout from Vault to User
-        let market_id_bytes = market.market_id.to_le_bytes();
-        let bump_seed = [market.bump];
-        let seeds = &[
-            b"market".as_ref(),
-            market_id_bytes.as_ref(),
-            bump_seed.as_ref(),
-        ];
+        let seeds = &[b"treasury".as_ref(), &[ctx.accounts.config.vault_bump]];
         let signer = &[&seeds[..]];
 
-        let cpi_accounts = Transfer {
-            from: ctx.accounts.vault_token_account.to_account_info(),
-            to: ctx.accounts.user_token_account.to_account_info(),
-            authority: market.to_account_info(), // Market PDA owns the vault
-        };
         let cpi_program = ctx.accounts.token_program.to_account_info();
-        token::transfer(
-            CpiContext::new_with_signer(cpi_program, cpi_accounts, signer), 
-            payout
-        )?;
+        token_interface::transfer(CpiContext::new_with_signer(cpi_program.clone(), token_interface::TransferInterface { from: ctx.accounts.treasury_vault.to_account_info(), to: ctx.accounts.user_token.to_account_info(), authority: ctx.accounts.treasury_vault.to_account_info() }, signer), payout)?;
+        token_interface::transfer(CpiContext::new_with_signer(cpi_program.clone(), token_interface::TransferInterface { from: ctx.accounts.treasury_vault.to_account_info(), to: ctx.accounts.dev_token.to_account_info(), authority: ctx.accounts.treasury_vault.to_account_info() }, signer), d_fee)?;
 
-        vote_record.claimed = true;
-        
+        ctx.accounts.vote.claimed = true;
+        Ok(())
+    }
+
+    pub fn resolve_market(ctx: Context<ResolveMarket>, winner_index: u8) -> Result<()> {
+        let market = &mut ctx.accounts.market;
+        market.resolved = true;
+        market.winner_index = Some(winner_index);
+        Ok(())
+    }
+
+    pub fn sweep_profit(ctx: Context<SweepProfit>, amount: u64) -> Result<()> {
+        let seeds = &[b"treasury".as_ref(), &[ctx.accounts.config.vault_bump]];
+        let signer = &[&seeds[..]];
+        token_interface::transfer(CpiContext::new_with_signer(ctx.accounts.token_program.to_account_info(), 
+            token_interface::TransferInterface { from: ctx.accounts.treasury_vault.to_account_info(), to: ctx.accounts.destination_token.to_account_info(), authority: ctx.accounts.treasury_vault.to_account_info() }, 
+            signer), amount)?;
         Ok(())
     }
 }
 
 #[derive(Accounts)]
-pub struct InitializeConfig<'info> {
-    #[account(
-        init,
-        payer = authority,
-        space = 8 + 32 + 32 + 32 + 2 + 2 + 2 + 1,
-        seeds = [b"config"],
-        bump
-    )]
-    pub config: Account<'info, GlobalConfig>,
-    
+pub struct InitializeProtocol<'info> {
+    #[account(init, payer = authority, space = ProtocolConfig::SPACE, seeds = [b"config"], bump)]
+    pub config: Account<'info, ProtocolConfig>,
+    #[account(init, payer = authority, mint::token_program = token_program, mint::authority = treasury_vault, seeds = [b"treasury"], bump)]
+    pub treasury_vault: InterfaceAccount<'info, TokenAccountInterface>,
+    pub mint: InterfaceAccount<'info, MintInterface>,
     #[account(mut)]
     pub authority: Signer<'info>,
-    
     pub system_program: Program<'info, System>,
-}
-
-#[derive(Accounts)]
-pub struct UpdateConfig<'info> {
-    #[account(mut, has_one = authority)]
-    pub config: Account<'info, GlobalConfig>,
-    pub authority: Signer<'info>,
-}
-
-#[derive(Accounts)]
-#[instruction(market_id: u64)]
-pub struct InitializeMarket<'info> {
-    #[account(
-        init, 
-        payer = authority, 
-        space = 8 + 1500, // Further expanded space
-        seeds = [b"market", market_id.to_le_bytes().as_ref()],
-        bump
-    )]
-    pub market: Account<'info, Market>,
-    
-    pub config: Account<'info, GlobalConfig>,
-    
-    #[account(mut)]
-    pub authority: Signer<'info>,
-    
-    #[account(
-        init,
-        payer = authority,
-        token::mint = mint,
-        token::authority = market,
-        seeds = [b"vault", market.key().as_ref()],
-        bump
-    )]
-    pub vault_token_account: Account<'info, TokenAccount>,
-    
-    pub mint: Account<'info, token::Mint>,
-    pub system_program: Program<'info, System>,
-    pub token_program: Program<'info, Token>,
+    pub token_program: Interface<'info, TokenInterface>,
     pub rent: Sysvar<'info, Rent>,
+}
+
+#[derive(Accounts)]
+#[instruction(question: String, end_timestamp: i64, outcomes_count: u8, virtual_liquidity: u64)]
+pub struct InitializeMarket<'info> {
+    #[account(init, payer = authority, space = Market::SPACE, seeds = [b"market", authority.key().as_ref(), question.as_bytes()], bump)]
+    pub market: Account<'info, Market>,
+    #[account(mut)]
+    pub authority: Signer<'info>,
+    pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]
 pub struct PlaceVote<'info> {
     #[account(mut)]
     pub market: Account<'info, Market>,
-    
-    #[account(
-        init_if_needed,
-        payer = user,
-        space = 8 + 32 + 32 + 1 + 8 + 1,
-        seeds = [b"vote", market.key().as_ref(), user.key().as_ref()],
-        bump
-    )]
-    pub vote_record: Account<'info, VoteRecord>,
-
+    #[account(init, payer = user, space = Vote::SPACE, seeds = [b"vote", market.key().as_ref(), user.key().as_ref()], bump)]
+    pub vote: Account<'info, Vote>,
+    #[account(mut, seeds = [b"treasury"], bump = config.vault_bump)]
+    pub treasury_vault: InterfaceAccount<'info, TokenAccountInterface>,
+    #[account(mut)]
+    pub user_token: InterfaceAccount<'info, TokenAccountInterface>,
+    pub config: Account<'info, ProtocolConfig>,
     #[account(mut)]
     pub user: Signer<'info>,
-    
-    #[account(mut)]
-    pub user_token_account: Account<'info, TokenAccount>,
-    
-    #[account(mut)]
-    pub vault_token_account: Account<'info, TokenAccount>,
-    
-    pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
+    pub token_program: Interface<'info, TokenInterface>,
+}
+
+#[derive(Accounts)]
+pub struct ClaimWinnings<'info> {
+    pub config: Account<'info, ProtocolConfig>,
+    pub market: Account<'info, Market>,
+    #[account(mut, seeds = [b"vote", market.key().as_ref(), user.key().as_ref()], bump = vote.bump, has_one = user)]
+    pub vote: Account<'info, Vote>,
+    #[account(mut, seeds = [b"treasury"], bump = config.vault_bump)]
+    pub treasury_vault: InterfaceAccount<'info, TokenAccountInterface>,
+    #[account(mut)]
+    pub user_token: InterfaceAccount<'info, TokenAccountInterface>,
+    #[account(mut)]
+    pub dev_token: InterfaceAccount<'info, TokenAccountInterface>,
+    #[account(mut)]
+    pub user: Signer<'info>,
+    pub token_program: Interface<'info, TokenInterface>,
 }
 
 #[derive(Accounts)]
@@ -586,246 +190,59 @@ pub struct ResolveMarket<'info> {
 }
 
 #[derive(Accounts)]
-pub struct AdminOnly<'info> {
-    #[account(mut, has_one = authority)]
-    pub market: Account<'info, Market>,
+pub struct SweepProfit<'info> {
+    #[account(has_one = authority)]
+    pub config: Account<'info, ProtocolConfig>,
+    #[account(mut, seeds = [b"treasury"], bump = config.vault_bump)]
+    pub treasury_vault: InterfaceAccount<'info, TokenAccountInterface>,
+    #[account(mut)]
+    pub destination_token: InterfaceAccount<'info, TokenAccountInterface>,
     pub authority: Signer<'info>,
-}
-
-#[derive(Accounts)]
-pub struct SweepMarket<'info> {
-    #[account(mut, has_one = authority)]
-    pub market: Account<'info, Market>,
-    
-    pub config: Account<'info, GlobalConfig>,
-
-    pub authority: Signer<'info>,
-    
-    #[account(mut, seeds = [b"vault", market.key().as_ref()], bump)]
-    pub vault_token_account: Account<'info, TokenAccount>,
-    
-    #[account(mut)]
-    pub dev_token_account: Account<'info, TokenAccount>,
-    
-    pub token_program: Program<'info, Token>,
-}
-
-#[derive(Accounts)]
-pub struct EarlyExit<'info> {
-    #[account(mut)]
-    pub market: Account<'info, Market>,
-    
-    pub config: Account<'info, GlobalConfig>,
-    #[account(mut, seeds = [b"vote", market.key().as_ref(), user.key().as_ref()], bump)]
-    pub vote_record: Account<'info, VoteRecord>,
-    
-    #[account(mut)]
-    pub user: Signer<'info>,
-    
-    #[account(mut)]
-    pub user_token_account: Account<'info, TokenAccount>,
-    
-    #[account(mut, seeds = [b"vault", market.key().as_ref()], bump)]
-    pub vault_token_account: Account<'info, TokenAccount>,
-    
-    pub token_program: Program<'info, Token>,
-}
-
-#[derive(Accounts)]
-pub struct ResolveViaOracle<'info> {
-    #[account(mut)]
-    pub market: Account<'info, Market>,
-    
-    pub oracle: Signer<'info>,
-    
-    #[account(constraint = market.oracle_key == Some(oracle.key()))]
-    pub oracle_check: AccountInfo<'info>,
-}
-
-#[derive(Accounts)]
-pub struct DevOnly<'info> {
-    #[account(mut)]
-    pub market: Account<'info, Market>,
-    pub dev: Signer<'info>,
-}
-
-#[derive(Accounts)]
-pub struct DistributeFees<'info> {
-    #[account(mut, has_one = authority)]
-    pub market: Account<'info, Market>,
-    pub authority: Signer<'info>,
-    
-    pub config: Account<'info, GlobalConfig>,
-    
-    #[account(
-        mut,
-        constraint = creator_token_account.owner == market.authority,
-        constraint = creator_token_account.mint == config.polybet_token_mint
-    )]
-    pub creator_token_account: Account<'info, TokenAccount>,
-    
-    #[account(
-        mut,
-        constraint = dev_token_account.owner == config.dev_vault,
-        constraint = dev_token_account.mint == config.polybet_token_mint
-    )]
-    pub dev_token_account: Account<'info, TokenAccount>,
-    
-    #[account(mut, seeds = [b"vault", market.key().as_ref()], bump)]
-    pub vault_token_account: Account<'info, TokenAccount>,
-    
-    #[account(mut)]
-    pub mint: Account<'info, token::Mint>,
-    
-    pub token_program: Program<'info, Token>,
-}
-
-#[derive(Accounts)]
-pub struct ClaimWinnings<'info> {
-    #[account(mut)]
-    pub market: Account<'info, Market>,
-    
-    pub config: Account<'info, GlobalConfig>,
-    
-    #[account(mut, seeds = [b"vote", market.key().as_ref(), user.key().as_ref()], bump)]
-    pub vote_record: Account<'info, VoteRecord>,
-    
-    #[account(mut)]
-    pub user: Signer<'info>,
-    
-    #[account(mut)]
-    pub user_token_account: Account<'info, TokenAccount>,
-    
-    #[account(
-        mut,
-        constraint = creator_token_account.owner == market.authority,
-        constraint = creator_token_account.mint == config.polybet_token_mint
-    )]
-    pub creator_token_account: Account<'info, TokenAccount>,
-    
-    #[account(
-        mut,
-        constraint = dev_token_account.owner == config.dev_vault,
-        constraint = dev_token_account.mint == config.polybet_token_mint
-    )]
-    pub dev_token_account: Account<'info, TokenAccount>,
-
-    #[account(mut, seeds = [b"vault", market.key().as_ref()], bump)]
-    pub vault_token_account: Account<'info, TokenAccount>,
-    
-    #[account(mut)]
-    pub mint: Account<'info, token::Mint>,
-
-    pub token_program: Program<'info, Token>,
+    pub token_program: Interface<'info, TokenInterface>,
 }
 
 #[account]
-pub struct GlobalConfig {
+pub struct ProtocolConfig {
     pub authority: Pubkey,
-    pub dev_vault: Pubkey,
-    pub polybet_token_mint: Pubkey,
-    pub burn_fee_bps: u16,
-    pub dev_fee_bps: u16,
-    pub creator_fee_bps: u16,
+    pub vault_bump: u8,
     pub bump: u8,
 }
 
 #[account]
 pub struct Market {
-    pub authority: Pubkey,   // 32
-    pub market_id: u64,      // 8
-    pub end_time: i64,       // 8
-    pub question: String,    // 4 + 200
-    pub resolved: bool,      // 1
-    pub winning_outcome: Option<u8>, // 1 + 1
-    pub totals: [u64; 8],    // 64
-    pub outcome_count: u8,   // 1
-    pub total_liquidity: u64,// 8
-    pub fees_distributed: bool, // 1
-    pub paused: bool,       // 1
-    pub cancelled: bool,    // 1
-    pub outcome_names: [String; 8], // 8 * (4 + 32) = 288
-    pub oracle_key: Option<Pubkey>, // 1 + 32 = 33
-    pub min_bet: u64,       // 8
-    pub max_bet: u64,       // 8
-    pub metadata_url: String, // 4 + 100
-    pub polymarket_id: String, // 4 + 100 (Slugs/Condition IDs)
-    pub bump: u8,           // 1
+    pub authority: Pubkey,
+    pub question: String,
+    pub end_timestamp: i64,
+    pub outcomes_count: u8,
+    pub total_pot: u64,
+    pub outcome_totals: [u64; 8],
+    pub resolved: bool,
+    pub winner_index: Option<u8>,
+    pub bump: u8,
 }
 
 #[account]
-pub struct VoteRecord {
-    pub user: Pubkey,          // 32
-    pub market: Pubkey,        // 32
-    pub outcome_index: u8,     // 1
-    pub amount: u64,           // 8
-    pub claimed: bool,         // 1
-}
-
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq)]
-pub enum VoteSide {
-    Yes,
-    No
-}
-
-#[error_code]
-pub enum MarketError {
-    #[msg("Market is already resolved.")]
-    AlreadyResolved,
-    #[msg("Market is not resolved yet.")]
-    NotResolved,
-    #[msg("You voted for the losing side.")]
-    Loser,
-    #[msg("You have already claimed winnings.")]
-    AlreadyClaimed,
-    #[msg("Outcome count must be between 1 and 8.")]
-    InvalidOutcomeCount,
-    #[msg("Invalid outcome index.")]
-    InvalidOutcomeIndex,
-    #[msg("Voting for multiple outcomes in the same market is not supported.")]
-    MultipleOutcomesNotSupported,
-    #[msg("Market has closed for voting.")]
-    MarketClosed,
-    #[msg("Fees have already been distributed.")]
-    FeesAlreadyDistributed,
-    #[msg("Fees have not been distributed yet.")]
-    FeesNotDistributed,
-    #[msg("Market is currently paused.")]
-    MarketPaused,
-    #[msg("Market was cancelled.")]
-    MarketCancelled,
-    #[msg("No active bet found for this user.")]
-    NoActiveBet,
-    #[msg("Bet amount is below the minimum limit.")]
-    BetTooSmall,
-    #[msg("Bet amount is above the maximum limit.")]
-    BetTooLarge,
-    #[msg("Invalid mint. Only Polybet Token is allowed.")]
-    InvalidMint,
-    #[msg("Sweep can only occur 30 days after market resolution.")]
-    SweepTooEarly,
-    #[msg("No dust tokens found to sweep.")]
-    NoDustToSweep,
-}
-
-#[event]
-pub struct VotePlacedEvent {
+pub struct Vote {
     pub user: Pubkey,
     pub market: Pubkey,
     pub outcome_index: u8,
     pub amount: u64,
+    pub locked_payout: u64,
+    pub locked_creator_fee: u64,
+    pub locked_dev_fee: u64,
+    pub claimed: bool,
+    pub bump: u8,
 }
 
-#[event]
-pub struct MarketResolvedEvent {
-    pub market: Pubkey,
-    pub winning_outcome: u8,
-}
+impl ProtocolConfig { pub const SPACE: usize = 8 + 32 + 1 + 1; }
+impl Market { pub const SPACE: usize = 8 + 32 + (4 + 64) + 8 + 1 + 8 + 64 + 1 + 2 + 1; }
+impl Vote { pub const SPACE: usize = 8 + 32 + 32 + 1 + 8 + 8 + 8 + 8 + 1 + 1; }
 
-#[event]
-pub struct FeesDistributedEvent {
-    pub market: Pubkey,
-    pub creator_fee: u64,
-    pub burn_amount: u64,
-    pub dev_fee: u64,
+#[error_code]
+pub enum PolybetError {
+    #[msg("Market ended.")] MarketEnded,
+    #[msg("Market active.")] MarketActive,
+    #[msg("Outcome mismatch.")] InvalidOutcome,
+    #[msg("Already claimed.")] AlreadyClaimed,
+    #[msg("Unauthorized.")] Unauthorized,
 }

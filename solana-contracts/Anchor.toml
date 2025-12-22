@@ -6,7 +6,7 @@ skip-lint = false
 polybet = "FEbCHi9LXo1AxKTtv3N9ZaHbs64Zq85b7dYPmjwVXYfv"
 
 [programs.mainnet]
-polybet = "FEbCHi9LXo1AxKTtv3N9ZaHbs64Zq85b7dYPmjwVXYfv"
+polybet = "F4ftWfZqAq99NK6yWTdA3B65xMwHVeD3MqVcqsvwbKzD"
 
 [registry]
 url = "https://api.apr.dev"
