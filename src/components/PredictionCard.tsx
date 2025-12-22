@@ -608,219 +608,188 @@ export const PredictionCard = ({
                 )
             }
 
-            {/* Outcomes */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 relative mt-auto">
-                {topOutcomes.map((idx) => (
-                    <button
-                        key={idx}
-                        onClick={(e) => handleOutcomeClick(e, idx)}
-                        disabled={isExpired || resolved}
-                        className={`w-full group/btn relative h-14 border-2 transition-all flex items-center justify-between px-4 overflow-hidden ${votedIndex === idx
-                            ? 'bg-black text-white border-black neo-shadow-sm'
-                            : 'bg-white border-black neo-shadow-sm hover:translate-y-[-2px] hover:neo-shadow hover:bg-black hover:text-white'
-                            } ${resolved && winningOutcome !== idx ? 'opacity-40 grayscale' : ''} ${isExpired && !resolved ? 'cursor-not-allowed' : ''}`}
-                    >
-                        {/* Probability Fill */}
-                        <div
-                            className={`absolute inset-0 opacity-10 ${votedIndex === idx ? 'bg-white' : 'bg-black'}`}
-                            style={{ width: `${outcomeProbabilities[idx]}%` }}
-                        />
+            {/* Betting Interface - Pushed to Bottom */}
+            <div className="mt-auto grid grid-cols-2 gap-3 z-10 pt-4">
+                {topOutcomes.map((index) => {
+                    const isWinning = winningOutcome === index;
+                    const isSelected = betMode === index;
+                    // Dynamic Colors for Yes/No default
+                    const isYes = index === 0;
+                    const baseColor = isYes ? 'bg-green-100' : 'bg-red-100'; // Default light background
+                    const borderColor = isYes ? 'border-green-600' : 'border-red-600';
+                    const textColor = 'text-black';
+                    const progressColor = isYes ? 'bg-green-500' : 'bg-red-500';
 
-                        <div className="mt-auto grid grid-cols-2 gap-3 z-10 pt-4">
-                            {topOutcomes.map((index) => {
-                                const isWinning = winningOutcome === index;
-                                const isSelected = betMode === index;
-                                // Dynamic Colors for Yes/No default
-                                const isYes = index === 0;
-                                const baseColor = isYes ? 'bg-green-100' : 'bg-red-100'; // Default light background
-                                const borderColor = isYes ? 'border-green-600' : 'border-red-600';
-                                const textColor = 'text-black';
-                                const progressColor = isYes ? 'bg-green-500' : 'bg-red-500';
-
-                                return (
-                                    <button
-                                        key={index}
-                                        onClick={(e) => handleOutcomeClick(e, index)}
-                                        disabled={isExpired || resolved}
-                                        className={`group/btn relative h-14 border-2 overflow-hidden transition-all duration-200 
+                    return (
+                        <button
+                            key={index}
+                            onClick={(e) => handleOutcomeClick(e, index)}
+                            disabled={isExpired || resolved}
+                            className={`group/btn relative h-14 border-2 overflow-hidden transition-all duration-200 
                                 ${borderColor} ${baseColor}
                                 ${isSelected ? 'transform translate-y-1 shadow-none' : 'shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_0px_rgba(0,0,0,1)]'}
                                 ${resolved && !isWinning ? 'opacity-40 grayscale' : ''}
                             `}
-                                    >
-                                        {/* Progress Bar Background (Visible on Hover or Default?) -> User wants "Colours... before you hover" */}
-                                        <div
-                                            className={`absolute inset-y-0 left-0 transition-all duration-500 opacity-20 group-hover/btn:opacity-40 ${progressColor}`}
-                                            style={{ width: `${outcomeProbabilities[index]}%` }}
-                                        />
+                        >
+                            {/* Progress Bar Background */}
+                            <div
+                                className={`absolute inset-y-0 left-0 transition-all duration-500 opacity-20 group-hover/btn:opacity-40 ${progressColor}`}
+                                style={{ width: `${outcomeProbabilities[index]}%` }}
+                            />
 
-                                        {/* Hover Fill Effect - Optional, keeping minimal to respect "swiss" clean feel but adding interaction */}
-                                        <div className={`absolute inset-0 opacity-0 group-hover/btn:opacity-10 transition-opacity ${isYes ? 'bg-green-500' : 'bg-red-500'}`} />
+                            {/* Hover Fill Effect */}
+                            <div className={`absolute inset-0 opacity-0 group-hover/btn:opacity-10 transition-opacity ${isYes ? 'bg-green-500' : 'bg-red-500'}`} />
 
-                                        <div className="relative z-10 flex flex-col justify-center items-start px-3 h-full">
-                                            <span className={`text-sm font-black uppercase italic leading-none ${textColor} flex items-center gap-2 w-full justify-between`}>
-                                                {outcomes[index]}
-                                                {isWinning && <CheckCircle2 size={14} className="text-black" />}
-                                            </span>
-                                            <div className="w-full flex justify-between items-end mt-1">
-                                                <span className="text-[10px] font-bold text-black font-mono tracking-tight">
-                                                    {isYes ? 'YES' : 'NO'}  {/* Explicit Label */}
-                                                </span>
-                                                <span className="text-xs font-black font-mono text-black">
-                                                    {Math.round(outcomeProbabilities[index])}%
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </button>
-                                );
-                            })}
+                            <div className="relative z-10 flex flex-col justify-center items-start px-3 h-full">
+                                <span className={`text-sm font-black uppercase italic leading-none ${textColor} flex items-center gap-2 w-full justify-between`}>
+                                    {outcomes[index]}
+                                    {isWinning && <CheckCircle2 size={14} className="text-black" />}
+                                </span>
+                                <div className="w-full flex justify-between items-end mt-1">
+                                    <span className="text-[10px] font-bold text-black font-mono tracking-tight">
+                                        {isYes ? 'YES' : 'NO'}
+                                    </span>
+                                    <span className="text-xs font-black font-mono text-black">
+                                        {Math.round(outcomeProbabilities[index])}%
+                                    </span>
+                                </div>
+                            </div>
+                        </button>
+                    );
+                })}
+            </div>
+
+            {outcomes.length > 2 && !resolved && (
+                <button
+                    onClick={(e) => { e.stopPropagation(); setShowAllOutcomes(!showAllOutcomes); }}
+                    className="text-[10px] font-black uppercase tracking-widest text-black hover:underline py-1 self-center col-span-full"
+                >
+                    {showAllOutcomes ? 'Show Less' : `+ [ ${outcomes.length - 2} ] MORE OUTCOMES`}
+                </button>
+            )}
+
+            {/* Bet Modal Overlay */}
+            <AnimatePresence mode="wait">
+                {betMode !== null && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 20 }}
+                        className="absolute inset-0 z-40 bg-white p-4 flex flex-col"
+                    >
+                        <div className="flex justify-between items-center mb-4 border-b-2 border-black pb-2">
+                            <span className="font-black italic uppercase text-lg">Confirm Position</span>
+                            <button
+                                onClick={(e) => { e.stopPropagation(); setBetMode(null); }}
+                                className="text-black hover:bg-black hover:text-white px-2 py-1 font-bold text-xs border border-black transition-colors"
+                            >
+                                CANCEL
+                            </button>
                         </div>
 
-                        {outcomes.length > 2 && !resolved && (
+                        <div className="flex-1 flex flex-col justify-center gap-4">
+                            <div className="bg-gray-50 border border-black p-3">
+                                <span className="block text-[10px] font-black uppercase tracking-widest text-black/60 mb-1">Outcome Selected</span>
+                                <span className="text-2xl font-black uppercase italic">{outcomes[betMode]}</span>
+                            </div>
+
+                            <div>
+                                <label className="block text-[10px] font-black uppercase tracking-widest text-black/60 mb-2">
+                                    Stake Amount ($PREDICT)
+                                </label>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-black">$</span>
+                                    <input
+                                        type="number"
+                                        value={stakeAmount}
+                                        onClick={(e) => e.stopPropagation()}
+                                        onChange={(e) => setStakeAmount(e.target.value)}
+                                        className="w-full bg-white border-2 border-black px-8 py-3 font-mono font-bold focus:outline-none focus:neo-shadow transition-all"
+                                        placeholder="100"
+                                        autoFocus
+                                    />
+                                </div>
+                            </div>
+
                             <button
-                                onClick={(e) => { e.stopPropagation(); setShowAllOutcomes(!showAllOutcomes); }}
-                                className="text-[10px] font-black uppercase tracking-widest text-black hover:underline py-1 self-center col-span-full"
+                                onClick={(e) => { e.stopPropagation(); confirmBet(); }}
+                                className="w-full bg-black text-white font-black uppercase italic py-4 hover:bg-green-600 transition-colors border-2 border-transparent hover:border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)]"
                             >
-                                {showAllOutcomes ? 'Show Less' : `+ [ ${outcomes.length - 2} ] MORE OUTCOMES`}
+                                CONFIRM TRADE
                             </button>
-                        )}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
+            {/* Provenance Footer */}
+            <div className="mt-auto pt-4 flex flex-col gap-1 border-t border-dashed border-black/10 origin-bottom scale-y-95">
+                <div className="flex justify-between items-center">
+                    <span className="text-[7px] font-mono text-black/40 uppercase tracking-[0.2em]">
+                        DATA_LAYER: {isCrypto ? 'PYTH_NETWORK' : 'POLYMARKET_RELAY_V2'}
+                    </span>
+                    <span className="text-[7px] font-mono text-black/40 uppercase">
+                        SIG_STUB: {marketPublicKey ? `${marketPublicKey.slice(0, 8)}...` : 'UNSIGN_DATA'}
+                    </span>
+                </div>
+            </div>
 
-                        {/* Bet Modal Overlay */}
-                        <AnimatePresence mode="wait">
-                            {betMode !== null && (
-                                <motion.div
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: 20 }}
-                                    className="absolute inset-0 z-40 bg-white p-4 flex flex-col"
-                                >
-                                    <div className="flex justify-between items-center mb-4 border-b-2 border-black pb-2">
-                                        <span className="font-black italic uppercase text-lg">Confirm Position</span>
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); setBetMode(null); }}
-                                            className="text-black hover:bg-black hover:text-white px-2 py-1 font-bold text-xs border border-black transition-colors"
-                                        >
-                                            CANCEL
-                                        </button>
-                                    </div>
+            {/* Footer / Status */}
+            {resolved && (
+                <div className="pt-2 border-t-2 border-black flex justify-between items-center">
+                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">ARCHIVED RECORD</span>
+                    <button
+                        onClick={async (e) => {
+                            e.stopPropagation();
+                            if (!connected || !publicKey) return toast.error("Connect Wallet");
+                            if (!isOnChain || !marketPublicKey) return toast.error("Not an on-chain market");
 
-                                    <div className="flex-1 flex flex-col justify-center gap-4">
-                                        <div className="bg-gray-50 border border-black p-3">
-                                            <span className="block text-[10px] font-black uppercase tracking-widest text-black/60 mb-1">Outcome Selected</span>
-                                            <span className="text-2xl font-black uppercase italic">{outcomes[betMode]}</span>
-                                        </div>
+                            const toastId = toast.loading("Processing claim...");
+                            try {
+                                const { getProgram, getMarketPDA, getVotePDA, getConfigPDA, getATA, BETTING_MINT, TOKEN_PROGRAM_ID } = await import('@/services/web3');
+                                const program = getProgram({ publicKey, signTransaction, signAllTransactions });
+                                if (!program) throw new Error("Program not initialized");
 
-                                        <div>
-                                            <label className="block text-[10px] font-black uppercase tracking-widest text-black/60 mb-2">
-                                                Stake Amount ($PREDICT)
-                                            </label>
-                                            <div className="relative">
-                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-black">$</span>
-                                                <input
-                                                    type="number"
-                                                    value={stakeAmount}
-                                                    onClick={(e) => e.stopPropagation()}
-                                                    onChange={(e) => setStakeAmount(e.target.value)}
-                                                    className="w-full bg-white border-2 border-black px-8 py-3 font-mono font-bold focus:outline-none focus:neo-shadow transition-all"
-                                                    placeholder="100"
-                                                    autoFocus
-                                                />
-                                            </div>
-                                        </div>
+                                const marketPda = new PublicKey(marketPublicKey);
+                                const votePda = (await getVotePDA(marketPda, publicKey))[0];
+                                const configPda = (await getConfigPDA());
+                                const configAccount: any = await program.account.globalConfig.fetch(configPda);
 
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); confirmBet(); }}
-                                            className="w-full bg-black text-white font-black uppercase italic py-4 hover:bg-green-600 transition-colors border-2 border-transparent hover:border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)]"
-                                        >
-                                            CONFIRM TRADE
-                                        </button>
-                                    </div>
-                                </div>
-                                </div>
+                                const vaultTokenAcc = (await getATA(marketPda, BETTING_MINT));
+                                const userTokenAcc = (await getATA(publicKey, BETTING_MINT));
+                                const devVault = configAccount.devVault;
+                                const devTokenAcc = (await getATA(devVault, BETTING_MINT));
 
-                        <button
-                            onClick={(e) => { e.stopPropagation(); confirmBet(); }}
-                            className="w-full bg-black text-white font-black uppercase italic py-4 hover:bg-green-600 transition-colors border-2 border-transparent hover:border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)]"
-                        >
-                            CONFIRM TRADE
-                        </button>
-                    </div>
-                        </motion.div>
-                    )}
-        </AnimatePresence>
-            </div >
+                                // Resolved Creator ATA
+                                const creatorPubkey = creator ? new PublicKey(creator) : publicKey; // fallback to user if not found (will fail contract constraint if wrong)
+                                const creatorTokenAcc = (await getATA(creatorPubkey, BETTING_MINT));
 
-    {/* Provenance Footer */ }
-    < div className = "mt-auto pt-4 flex flex-col gap-1 border-t border-dashed border-black/10 origin-bottom scale-y-95" >
-        <div className="flex justify-between items-center">
-            <span className="text-[7px] font-mono text-black/40 uppercase tracking-[0.2em]">
-                DATA_LAYER: {isCrypto ? 'PYTH_NETWORK' : 'POLYMARKET_RELAY_V2'}
-            </span>
-            <span className="text-[7px] font-mono text-black/40 uppercase">
-                SIG_STUB: {marketPublicKey ? `${marketPublicKey.slice(0, 8)}...` : 'UNSIGN_DATA'}
-            </span>
+                                await program.methods.claimWinnings().accounts({
+                                    market: marketPda,
+                                    config: configPda,
+                                    voteRecord: votePda,
+                                    user: publicKey,
+                                    userTokenAccount: userTokenAcc,
+                                    creatorTokenAccount: creatorTokenAcc,
+                                    devTokenAccount: devTokenAcc,
+                                    vaultTokenAccount: vaultTokenAcc,
+                                    mint: BETTING_MINT,
+                                    tokenProgram: TOKEN_PROGRAM_ID,
+                                }).rpc();
+
+                                toast.success("Winnings Claimed Successfully!", { id: toastId });
+                                if (onSettle) onSettle(id);
+                            } catch (e: any) {
+                                console.error("Claim Failed:", e);
+                                toast.error(`Claim Failed: ${e.message}`, { id: toastId });
+                            }
+                        }}
+                        className="text-[10px] font-black text-green-600 hover:underline uppercase tracking-tighter"
+                    >
+                        REDEEM WINNINGS
+                    </button>
+                </div>
+            )}
         </div>
-            </div >
-
-    {/* Footer / Status */ }
-{
-    resolved && (
-        <div className="pt-2 border-t-2 border-black flex justify-between items-center">
-            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">ARCHIVED RECORD</span>
-            <button
-                onClick={async (e) => {
-                    e.stopPropagation();
-                    if (!connected || !publicKey) return toast.error("Connect Wallet");
-                    if (!isOnChain || !marketPublicKey) return toast.error("Not an on-chain market");
-
-                    const toastId = toast.loading("Processing claim...");
-                    try {
-                        const { getProgram, getMarketPDA, getVotePDA, getConfigPDA, getATA, BETTING_MINT, TOKEN_PROGRAM_ID } = await import('@/services/web3');
-                        const program = getProgram({ publicKey, signTransaction, signAllTransactions });
-                        if (!program) throw new Error("Program not initialized");
-
-                        const marketPda = new PublicKey(marketPublicKey);
-                        const votePda = (await getVotePDA(marketPda, publicKey))[0];
-                        const configPda = (await getConfigPDA());
-                        const configAccount: any = await program.account.globalConfig.fetch(configPda);
-
-                        const vaultTokenAcc = (await getATA(marketPda, BETTING_MINT));
-                        const userTokenAcc = (await getATA(publicKey, BETTING_MINT));
-                        const devVault = configAccount.devVault;
-                        const devTokenAcc = (await getATA(devVault, BETTING_MINT));
-
-                        // Resolved Creator ATA
-                        const creatorPubkey = creator ? new PublicKey(creator) : publicKey; // fallback to user if not found (will fail contract constraint if wrong)
-                        const creatorTokenAcc = (await getATA(creatorPubkey, BETTING_MINT));
-
-                        await program.methods.claimWinnings().accounts({
-                            market: marketPda,
-                            config: configPda,
-                            voteRecord: votePda,
-                            user: publicKey,
-                            userTokenAccount: userTokenAcc,
-                            creatorTokenAccount: creatorTokenAcc,
-                            devTokenAccount: devTokenAcc,
-                            vaultTokenAccount: vaultTokenAcc,
-                            mint: BETTING_MINT,
-                            tokenProgram: TOKEN_PROGRAM_ID,
-                        }).rpc();
-
-                        toast.success("Winnings Claimed Successfully!", { id: toastId });
-                        if (onSettle) onSettle(id);
-                    } catch (e: any) {
-                        console.error("Claim Failed:", e);
-                        toast.error(`Claim Failed: ${e.message}`, { id: toastId });
-                    }
-                }}
-                className="text-[10px] font-black text-green-600 hover:underline uppercase tracking-tighter"
-            >
-                REDEEM WINNINGS
-            </button>
-        </div>
-    )
-}
-        </div >
     );
 };
