@@ -31,8 +31,9 @@ import {
     getTreasuryVaultPDA,
     BETTING_MINT
 } from '@/services/web3';
-import { fetchPolymarketTrending } from '@/services/polymarket';
 import { dailyPredictions } from '@/data/predictions';
+import { fetchDailyMarkets } from '@/services/polymarket';
+import { getProgram } from '@/services/web3';
 
 // Admin wallet addresses
 const ADMIN_WALLETS = [
@@ -49,8 +50,7 @@ export default function AdminPage() {
     const [password, setPassword] = useState('');
     const [authError, setAuthError] = useState(false);
 
-    const [outcomes, setOutcomes] = useState<any[]>([]);
-    const [allRewards, setAllRewards] = useState<any[]>([]);
+    const [onChainMarkets, setOnChainMarkets] = useState<any[]>([]);
     const [totalVotes, setTotalVotes] = useState(0);
     const [polyEvents, setPolyEvents] = useState<any[]>([]);
     const [isLoadingPoly, setIsLoadingPoly] = useState(false);
@@ -66,9 +66,34 @@ export default function AdminPage() {
             setIsAuthenticated(false);
         }
         loadData();
-        loadPolymarket();
+        loadDiscoveryFeed();
         checkProtocol();
     }, [publicKey]);
+
+    const loadDiscoveryFeed = async () => {
+        setIsLoadingPoly(true);
+        try {
+            // 1. Fetch exactly what the home page sees
+            const feed = await fetchDailyMarkets(50);
+            setPolyEvents(feed);
+
+            // 2. Fetch what's actually on chain
+            const program = getProgram({ publicKey: null });
+            if (program) {
+                const accounts = await program.account.market.all();
+                const mapped = accounts.map((a: any) => ({
+                    address: a.publicKey.toString(),
+                    id: a.account.marketId.toNumber(),
+                    polymarketId: a.account.polymarketId
+                }));
+                setOnChainMarkets(mapped);
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setIsLoadingPoly(false);
+        }
+    };
 
     const checkProtocol = async () => {
         try {
@@ -77,18 +102,6 @@ export default function AdminPage() {
             setProtocolStatus('active');
         } catch (e) {
             setProtocolStatus('uninitialized');
-        }
-    };
-
-    const loadPolymarket = async () => {
-        setIsLoadingPoly(true);
-        try {
-            const trending = await fetchPolymarketTrending(10);
-            setPolyEvents(trending);
-        } catch (e) {
-            console.error(e);
-        } finally {
-            setIsLoadingPoly(false);
         }
     };
 
@@ -128,8 +141,6 @@ export default function AdminPage() {
     };
 
     const loadData = () => {
-        setOutcomes(getAllOutcomes());
-        setAllRewards(calculateAllRewards(1000));
         setTotalVotes(getAllVotes().length);
     };
 
@@ -147,8 +158,9 @@ export default function AdminPage() {
         }
     };
 
-    const totalRewardPool = allRewards.reduce((sum, r) => sum + r.totalRewardPool, 0);
-    const totalWinners = allRewards.reduce((sum, r) => sum + r.totalWinners, 0);
+    // Placeholder for legacy reward calculation logic if needed in future
+    const totalRewardPool = 0;
+    const totalWinners = 0;
 
     return (
         <div className="min-h-screen bg-white p-6 md:p-12 text-black">
@@ -199,10 +211,10 @@ export default function AdminPage() {
                         {/* Summary Stats */}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:grid-cols-4 md:gap-6">
                             {[
-                                { label: 'VOTES', val: totalVotes, icon: Users },
-                                { label: 'CLOSED', val: outcomes.length, icon: CheckCircle },
-                                { label: 'POOL', val: `$${totalRewardPool >= 1000 ? (totalRewardPool / 1000).toFixed(1) + 'k' : totalRewardPool}`, icon: DollarSign },
-                                { label: 'WINNERS', val: totalWinners, icon: TrendingUp }
+                                { label: 'TOTAL_VOTES', val: totalVotes, icon: Users },
+                                { label: 'ON_CHAIN_MARKETS', val: onChainMarkets.length, icon: CheckCircle },
+                                { label: 'SIGNAL_FEED', val: polyEvents.length, icon: TrendingUp },
+                                { label: 'ADMIN_ACCESS', val: 'VERIFIED', icon: Shield }
                             ].map((stat, i) => (
                                 <div key={i} className="border-4 border-black p-4 md:p-6 bg-white shadow-[4px_4px_0px_rgba(0,0,0,1)] md:shadow-[6px_6px_0px_rgba(0,0,0,1)]">
                                     <stat.icon className="w-5 h-5 mb-3 text-orange-600" />
@@ -236,14 +248,14 @@ export default function AdminPage() {
                             </div>
                         </div>
 
-                        {/* Daily Oven: Polymarket */}
+                        {/* Market Discovery & Sync Hub */}
                         <div className="border-4 border-black p-8 bg-white">
                             <div className="flex items-center justify-between mb-8">
                                 <div>
-                                    <h2 className="text-2xl font-black uppercase italic tracking-tighter">DAILY_MARKET_OVEN</h2>
-                                    <p className="text-[10px] font-mono font-bold text-black/40 uppercase">LIVE_POLYM_FEED // FILTER: &lt;24H_EXPIRY</p>
+                                    <h2 className="text-2xl font-black uppercase italic tracking-tighter">MARKET_SYNC_HUB</h2>
+                                    <p className="text-[10px] font-mono font-bold text-black/40 uppercase">WEBSITE_LIVE_FEED // SYNC_STATUS_TRACKER</p>
                                 </div>
-                                <button onClick={loadPolymarket} className={`p-4 border-2 border-black hover:bg-orange-50 transition-colors ${isLoadingPoly ? 'animate-spin' : ''}`}>
+                                <button onClick={loadDiscoveryFeed} className={`p-4 border-2 border-black hover:bg-orange-50 transition-colors ${isLoadingPoly ? 'animate-spin' : ''}`}>
                                     <TrendingUp size={20} />
                                 </button>
                             </div>
@@ -251,11 +263,23 @@ export default function AdminPage() {
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                 {polyEvents.map((event) => {
                                     const hoursLeft = Math.max(0, (event.endTime * 1000 - Date.now()) / (1000 * 60 * 60));
+                                    const isOnChain = onChainMarkets.some(m => m.polymarketId === event.polymarketId);
+
                                     return (
-                                        <div key={event.id} className="border-2 border-black p-5 relative overflow-hidden flex flex-col justify-between group">
-                                            <div className="absolute top-0 right-0 px-3 py-1 bg-black text-white text-[8px] font-black uppercase italic">
-                                                ENDS_IN: {hoursLeft.toFixed(1)}H
+                                        <div key={event.id} className={`border-2 border-black p-5 relative overflow-hidden flex flex-col justify-between group ${isOnChain ? 'bg-orange-50/30' : 'bg-white'}`}>
+                                            <div className="flex items-center justify-between mb-2">
+                                                <div className="flex items-center gap-2">
+                                                    {isOnChain ? (
+                                                        <span className="bg-green-600 text-white text-[8px] font-black px-2 py-0.5 uppercase tracking-widest">LIVE_ON_CHAIN</span>
+                                                    ) : (
+                                                        <span className="bg-black text-white text-[8px] font-black px-2 py-0.5 uppercase tracking-widest">READY_FOR_INIT</span>
+                                                    )}
+                                                </div>
+                                                <div className="text-[8px] font-black uppercase italic opacity-40">
+                                                    ENDS: {hoursLeft.toFixed(1)}H
+                                                </div>
                                             </div>
+
                                             <div className="mb-4">
                                                 <h4 className="font-black text-sm uppercase leading-tight pr-12">{event.question}</h4>
                                                 <div className="flex gap-2 mt-3">
@@ -266,12 +290,19 @@ export default function AdminPage() {
                                                     ))}
                                                 </div>
                                             </div>
-                                            <button
-                                                onClick={() => handleMirrorMarket(event)}
-                                                className="w-full py-4 md:py-2 bg-black text-white text-[10px] font-black uppercase tracking-widest hover:bg-orange-600 transition-colors active:bg-orange-700"
-                                            >
-                                                MIRROR_DAILY_SIGNAL
-                                            </button>
+
+                                            {isOnChain ? (
+                                                <div className="w-full py-3 bg-gray-100 text-black/40 text-[10px] font-black uppercase tracking-widest text-center border-2 border-dashed border-black/10">
+                                                    SYNC_COMPLETE
+                                                </div>
+                                            ) : (
+                                                <button
+                                                    onClick={() => handleMirrorMarket(event)}
+                                                    className="w-full py-4 md:py-3 bg-black text-white text-[10px] font-black uppercase tracking-widest hover:bg-orange-600 transition-colors active:bg-orange-700"
+                                                >
+                                                    INITIALIZE_ON_MAINNET
+                                                </button>
+                                            )}
                                         </div>
                                     );
                                 })}
