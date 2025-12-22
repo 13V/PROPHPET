@@ -619,7 +619,7 @@ export const PredictionCard = ({
                     const finalBorderColor = 'border-black hover:border-orange-500'; // Brutalist default
 
                     const textColor = 'text-black';
-                    const progressColor = 'bg-gray-100'; // Subtle progress indication
+                    const progressColor = 'bg-orange-500'; // Thin strip at bottom
 
                     return (
                         <button
@@ -632,13 +632,13 @@ export const PredictionCard = ({
                                 ${resolved && !isWinning ? 'opacity-40 grayscale' : ''}
                             `}
                         >
-                            {/* Progress Bar Background */}
+                            {/* Thin Progress Strip at Bottom */}
                             <div
-                                className={`absolute inset-y-0 left-0 transition-all duration-500 ${progressColor} opacity-50`}
+                                className={`absolute bottom-0 left-0 h-1 transition-all duration-500 ${progressColor}`}
                                 style={{ width: `${outcomeProbabilities[index]}%` }}
                             />
 
-                            <div className="relative z-10 flex items-center justify-between px-3 h-full w-full">
+                            <div className="relative z-10 flex items-center justify-between px-3 h-full w-full pb-1">
                                 <span className={`text-xs font-black uppercase italic leading-none ${textColor} flex items-center gap-2 truncate text-left`}>
                                     <span className="truncate">{outcomes[index]}</span>
                                     {isWinning && <CheckCircle2 size={14} className="text-black shrink-0" />}
