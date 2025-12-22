@@ -101,7 +101,7 @@ export const MarketWarRoom = ({ isOpen, onClose, market }: MarketWarRoomProps) =
 
     const displayTitle = reconstructTitle();
     // Display category override
-    const displayCategory = (market.question.toLowerCase().includes(' vs ') || market.question.toLowerCase().includes(' vs. ')) ? 'SPORTS' : market.category;
+    const displayCategory = market?.question?.toLowerCase().includes(' vs ') || market?.question?.toLowerCase().includes(' vs. ') ? 'SPORTS' : (market?.category || 'General');
 
     // Team Parsing Logic for Sports (Enhanced)
     const getTeams = () => {
@@ -207,7 +207,7 @@ export const MarketWarRoom = ({ isOpen, onClose, market }: MarketWarRoomProps) =
     // Dynamic Category Coloring (Professional Themes)
     const getCategoryTheme = (cat: string) => {
         const c = cat.toLowerCase();
-        const q = market.question.toLowerCase();
+        const q = market?.question?.toLowerCase() || '';
         if (q.includes(' vs ') || q.includes(' vs. ') || c.includes('sports')) return { color: '#f59e0b', glow: 'rgba(245, 158, 11, 0.15)', text: 'text-amber-600', border: 'border-amber-600/30' };
 
         if (c.includes('crypto')) return { color: '#06b6d4', glow: 'rgba(6, 182, 212, 0.15)', text: 'text-cyan-600', border: 'border-cyan-600/30' };
@@ -219,7 +219,7 @@ export const MarketWarRoom = ({ isOpen, onClose, market }: MarketWarRoomProps) =
 
     const getCategoryIcon = (cat: string) => {
         const c = (cat || '').toLowerCase();
-        const q = (market.question || '').toLowerCase();
+        const q = (market?.question || '').toLowerCase();
         if (q.includes(' vs ') || q.includes(' vs. ') || c.includes('sport')) return Swords;
         if (c.includes('crypto')) return Zap;
         if (c.includes('politics')) return Gavel;
@@ -229,13 +229,13 @@ export const MarketWarRoom = ({ isOpen, onClose, market }: MarketWarRoomProps) =
         return Activity;
     };
 
-    const CategoryIcon = getCategoryIcon(market.category || '');
-    const theme = getCategoryTheme(market.category || '');
+    const CategoryIcon = getCategoryIcon(market?.category || '');
+    const theme = getCategoryTheme(market?.category || 'news');
     const isExpired = market ? Date.now() > (market.endTime * 1000) : false;
     const resolved = market?.resolved;
 
     const shareToX = () => {
-        const text = encodeURIComponent(`I'm predicting on "${market.question}" using @PolyBet! 🔮\n\nPredictions live on Solana. #POLYBET #Solana`);
+        const text = encodeURIComponent(`I'm predicting on "${market?.question || ''}" using @PolyBet! 🔮\n\nPredictions live on Solana. #POLYBET #Solana`);
         const url = encodeURIComponent(window.location.href);
         window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
     };
@@ -278,7 +278,7 @@ export const MarketWarRoom = ({ isOpen, onClose, market }: MarketWarRoomProps) =
                         {/* Status Bar */}
                         <div className="absolute top-0 inset-x-0 h-6 bg-black flex items-center justify-between px-4 z-[60]">
                             <div className="flex items-center gap-4 text-[8px] font-mono font-black text-white uppercase tracking-widest">
-                                <span>TERMINAL_SESSION: {market.id}</span>
+                                <span>TERMINAL_SESSION: {market?.id}</span>
                                 <span className="text-orange-600 animate-pulse">● LIVE_FEED</span>
                             </div>
                             <div className="flex items-center gap-4 text-[8px] font-mono font-black text-white/40 uppercase tracking-widest">
@@ -399,6 +399,7 @@ export const MarketWarRoom = ({ isOpen, onClose, market }: MarketWarRoomProps) =
 
                             <div className="space-y-4 flex-1">
                                 {(() => {
+                                    if (!market) return null;
                                     const totals = market.totals || [1, 1];
                                     const total = totals.reduce((a: number, b: number) => a + b, 0);
 
