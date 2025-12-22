@@ -365,14 +365,11 @@ export async function fetchDailyMarkets(requiredCount = 20): Promise<any[]> {
                 // 1. Volume Filter (Stricter: > $5k to be considered "High Volume")
                 if (item.totalLiquidity < 5000) continue;
 
-                // 2. Short-Term Filter (Crucial: Daily/Hourly)
-                // We want markets ending VERY soon. < 48 hours.
+                // 2. Short-Term Filter (Strict Daily: < 24h)
                 if (!item.endTime) continue;
                 const hoursLeft = (item.endTime * 1000 - Date.now()) / (1000 * 60 * 60);
 
-                // Allow up to 24h (1 day) to ensure we fill the slots, but prioritize < 24h
-                if (hoursLeft <= 0) continue; // Ended
-                if (hoursLeft > 24) continue; // Too far out (not "daily")
+                if (hoursLeft <= 0 || hoursLeft > 24) continue;
 
                 seenIds.add(item.id);
                 collected.push(item);

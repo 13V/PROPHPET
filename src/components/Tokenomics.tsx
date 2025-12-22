@@ -19,7 +19,7 @@ export const Tokenomics = () => {
         {
             icon: Lock,
             title: 'PROTOCOL_TAX',
-            description: 'A 10% protocol tax is distributed: 5% to market creators and 5% to core dev.',
+            description: 'A 10% tax is applied (5% creator, 5% dev), leaving a fixed 1.9x payout for winners.',
         },
         {
             icon: TrendingUp,
@@ -97,8 +97,8 @@ export const Tokenomics = () => {
                                     <p className="text-3xl font-black font-mono tracking-tighter italic">1,000,000,000</p>
                                 </div>
                                 <div className="p-4 bg-orange-600 text-white border border-black">
-                                    <p className="text-[10px] font-black uppercase tracking-widest mb-1 opacity-80">PROTOCOL_TAX</p>
-                                    <p className="text-3xl font-black font-mono tracking-tighter italic">10.00%</p>
+                                    <p className="text-[10px] font-black uppercase tracking-widest mb-1 opacity-80">FIXED_PAYOUT</p>
+                                    <p className="text-3xl font-black font-mono tracking-tighter italic">1.90x</p>
                                 </div>
                             </div>
                         </div>

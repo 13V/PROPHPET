@@ -22,271 +22,319 @@ import {
     isPredictionClosed
 } from '@/utils/predictionManagement';
 import {
-    calculateRewards,
     calculateAllRewards,
     downloadRewardsCSV
 } from '@/utils/rewardCalculation';
+import {
+    initializeProtocol,
+    initializeMarketOnChain,
+    getTreasuryVaultPDA,
+    BETTING_MINT
+} from '@/services/web3';
+import { fetchPolymarketTrending } from '@/services/polymarket';
+import { dailyPredictions } from '@/data/predictions';
 
 // Admin wallet addresses
 const ADMIN_WALLETS = [
-    'FUy2dxo5ZF2WhvRunw8fq8Nau3GX3NFis8AgYavxASX2', // Dev Wallet
+    '2KF9SAvpU2h2ZhczzMLbgx7arkjG8QHCXbQ6XaDqtEtm', // User's Personal Phantom Wallet
+    'riQLJeg8RLZkTCja6kPsHEnT2KwyL4maLPQ7f9JkFjW', // Dev/Treasury Wallet
 ];
 
-import { dailyPredictions } from '@/data/predictions';
-
-const predictions = dailyPredictions;
+const ADMIN_PASS = "PolyPredict2024!";
 
 export default function AdminPage() {
     const { publicKey, connected } = useWallet();
     const [isAdmin, setIsAdmin] = useState(false);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [password, setPassword] = useState('');
+    const [authError, setAuthError] = useState(false);
+
     const [outcomes, setOutcomes] = useState<any[]>([]);
     const [allRewards, setAllRewards] = useState<any[]>([]);
     const [totalVotes, setTotalVotes] = useState(0);
+    const [polyEvents, setPolyEvents] = useState<any[]>([]);
+    const [isLoadingPoly, setIsLoadingPoly] = useState(false);
+    const [treasuryVault, setTreasuryVault] = useState<string>('');
+    const [protocolStatus, setProtocolStatus] = useState<'loading' | 'uninitialized' | 'active'>('loading');
 
     useEffect(() => {
         if (publicKey) {
-            // Check if connected wallet is an admin
             const isAdminWallet = ADMIN_WALLETS.includes(publicKey.toString());
             setIsAdmin(isAdminWallet);
+        } else {
+            setIsAdmin(false);
+            setIsAuthenticated(false);
         }
-
-        // Load data
         loadData();
+        loadPolymarket();
+        checkProtocol();
     }, [publicKey]);
+
+    const checkProtocol = async () => {
+        try {
+            const vault = await getTreasuryVaultPDA();
+            setTreasuryVault(vault.toString());
+            setProtocolStatus('active');
+        } catch (e) {
+            setProtocolStatus('uninitialized');
+        }
+    };
+
+    const loadPolymarket = async () => {
+        setIsLoadingPoly(true);
+        try {
+            const trending = await fetchPolymarketTrending(10);
+            setPolyEvents(trending);
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setIsLoadingPoly(false);
+        }
+    };
+
+    const handleInitializeProtocol = async () => {
+        if (!publicKey) return;
+        try {
+            const tx = await initializeProtocol(window.solana, BETTING_MINT);
+            alert("Protocol Initialized! TX: " + tx);
+            checkProtocol();
+        } catch (e: any) {
+            alert("Error: " + e.message);
+        }
+    };
+
+    const handleMirrorMarket = async (event: any) => {
+        if (!publicKey) return;
+        const confirmed = window.confirm(`Mirror "${event.question}" as a Daily market?`);
+        if (!confirmed) return;
+
+        try {
+            const weights = event.totals.map((t: number) => {
+                const total = event.totals.reduce((a: number, b: number) => a + b, 0);
+                return Math.floor((t / total) * 1000);
+            });
+            const tx = await initializeMarketOnChain(
+                window.solana,
+                event.question,
+                event.endTime,
+                event.outcomes.length,
+                1000000,
+                weights
+            );
+            alert("Daily Market Mirrored! TX: " + tx);
+        } catch (e: any) {
+            alert("Error: " + e.message);
+        }
+    };
 
     const loadData = () => {
         setOutcomes(getAllOutcomes());
-        setAllRewards(calculateAllRewards(1000)); // 1000 $PREDICT per prediction
+        setAllRewards(calculateAllRewards(1000));
         setTotalVotes(getAllVotes().length);
     };
 
     const handleClosePrediction = (predictionId: number, outcome: 'yes' | 'no') => {
-        if (!publicKey) return;
-
-        const confirmed = window.confirm(
-            `Are you sure you want to close this prediction with outcome: ${outcome.toUpperCase()}?`
-        );
-
-        if (confirmed) {
-            closePrediction(predictionId, outcome, publicKey.toString());
+        if (window.confirm(`Close prediction with outcome: ${outcome.toUpperCase()}?`)) {
+            closePrediction(predictionId, outcome, publicKey?.toString() || "");
             loadData();
         }
     };
 
     const handleReopenPrediction = (predictionId: number) => {
-        const confirmed = window.confirm('Are you sure you want to reopen this prediction?');
-
-        if (confirmed) {
+        if (window.confirm('Reopen this prediction?')) {
             reopenPrediction(predictionId);
             loadData();
         }
     };
 
-    const handleDownloadRewards = () => {
-        downloadRewardsCSV();
-    };
-
-    // Wallet Connection Check Removed - Allowing offline access for Key Deriver
-
     const totalRewardPool = allRewards.reduce((sum, r) => sum + r.totalRewardPool, 0);
     const totalWinners = allRewards.reduce((sum, r) => sum + r.totalWinners, 0);
 
     return (
-        <div className="min-h-screen bg-white p-6 md:p-12">
+        <div className="min-h-screen bg-white p-6 md:p-12 text-black">
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
-                <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center justify-between mb-12 border-b-4 border-black pb-8">
                     <div>
-                        <h1 className="text-4xl font-black text-black uppercase tracking-tighter italic">POLYPREDICT_ADMIN</h1>
-                        <p className="text-[10px] font-mono font-bold text-black/40 uppercase tracking-widest">PROPHET_PROTOCOL // MANAGEMENT_CONSOLE</p>
+                        <h1 className="text-4xl font-black uppercase tracking-tighter italic">POLYPREDICT_ADMIN</h1>
+                        <p className="text-[10px] font-mono font-bold text-black/40 uppercase tracking-widest italic">PROTOCOL_AUTH_STATION // DAILY_FOCUS_ENABLED</p>
                     </div>
                     <WalletConnect />
                 </div>
 
-                {(!connected || !isAdmin) && (
-                    <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4 mb-8 flex items-center gap-3">
-                        <Lock className="w-5 h-5 text-yellow-500" />
-                        <div>
-                            <h3 className="font-bold text-yellow-500">Restricted Access</h3>
-                            <p className="text-sm text-yellow-200/70">
-                                {!connected ? "Wallet not connected. " : "Not logged in as Admin. "}
-                                You can only use the Developer Tools below.
-                            </p>
-                        </div>
-                    </div>
-                )}
+                {connected && isAdmin && !isAuthenticated && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="max-w-md mx-auto my-20 p-8 border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] bg-white text-center"
+                    >
+                        <Lock className="w-12 h-12 text-orange-600 mx-auto mb-6" />
+                        <h2 className="text-2xl font-black uppercase italic mb-2 tracking-tighter">SECURE_AUTH_REQUIRED</h2>
+                        <p className="text-[10px] font-mono text-black/40 uppercase mb-8">Verification signal needed for station access</p>
 
-                {/* Stats - HIDDEN IF NOT ADMIN */}
-                {isAdmin && (
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="bg-gradient-to-br from-purple-900/20 to-pink-900/20 border border-purple-500/30 rounded-xl p-6"
-                        >
-                            <Users className="w-8 h-8 text-purple-400 mb-2" />
-                            <div className="text-3xl font-bold text-white">{totalVotes}</div>
-                            <div className="text-sm text-gray-400">Total Votes</div>
-                        </motion.div>
-
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.1 }}
-                            className="bg-gradient-to-br from-green-900/20 to-emerald-900/20 border border-green-500/30 rounded-xl p-6"
-                        >
-                            <CheckCircle className="w-8 h-8 text-green-400 mb-2" />
-                            <div className="text-3xl font-bold text-white">{outcomes.length}</div>
-                            <div className="text-sm text-gray-400">Closed Predictions</div>
-                        </motion.div>
-
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.2 }}
-                            className="bg-gradient-to-br from-blue-900/20 to-cyan-900/20 border border-blue-500/30 rounded-xl p-6"
-                        >
-                            <TrendingUp className="w-8 h-8 text-blue-400 mb-2" />
-                            <div className="text-3xl font-bold text-white">{totalWinners}</div>
-                            <div className="text-sm text-gray-400">Total Winners</div>
-                        </motion.div>
-
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.3 }}
-                            className="bg-gradient-to-br from-yellow-900/20 to-orange-900/20 border border-yellow-500/30 rounded-xl p-6"
-                        >
-                            <DollarSign className="w-8 h-8 text-orange-600 mb-2" />
-                            <div className="text-3xl font-black text-black">{totalRewardPool.toLocaleString()}</div>
-                            <div className="text-sm font-black text-black/40 uppercase tracking-widest">$PREDICT_REWARDS</div>
-                        </motion.div>
-                    </div>
-                )}
-
-                {/* Export Button - HIDDEN IF NOT ADMIN */}
-                {isAdmin && (
-                    <div className="mb-8 flex gap-4">
-                        <button
-                            onClick={handleDownloadRewards}
-                            className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg font-bold text-white hover:scale-105 transition-all flex items-center gap-2"
-                        >
-                            <Download className="w-5 h-5" />
-                            Export Rewards CSV
-                        </button>
-                    </div>
-                )}
-
-                {/* Developer Tools (Key Deriver) - ALWAYS VISIBLE */}
-                <div className="mb-8 p-6 bg-gray-900/50 border border-gray-800 rounded-xl">
-                    <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                        <Lock className="w-5 h-5 text-yellow-500" />
-                        Developer Tools: Key Deriver
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label className="block text-sm text-gray-400 mb-2">Secret Key JSON (Paste content of program-keypair.json)</label>
-                            <textarea
-                                id="sk-input"
-                                className="w-full h-24 bg-black/40 border border-gray-700 rounded-lg p-3 text-xs font-mono text-gray-300 focus:border-purple-500 outline-none"
-                                placeholder="[123, 45, 67, ...]"
+                        <div className="space-y-4">
+                            <input
+                                type="password"
+                                value={password}
+                                onChange={(e) => { setPassword(e.target.value); setAuthError(false); }}
+                                onKeyDown={(e) => e.key === 'Enter' && password === ADMIN_PASS && setIsAuthenticated(true)}
+                                className={`w-full bg-gray-50 border-2 ${authError ? 'border-red-600' : 'border-black'} px-4 py-3 text-black font-black uppercase tracking-widest text-center focus:bg-orange-50 outline-none`}
+                                placeholder="STATION_PASSPHRASE"
                             />
-                        </div>
-                        <div className="flex flex-col justify-center">
                             <button
                                 onClick={() => {
-                                    try {
-                                        const input = (document.getElementById('sk-input') as HTMLTextAreaElement).value;
-                                        const secretKey = Uint8Array.from(JSON.parse(input));
-                                        const { Keypair } = require('@solana/web3.js'); // Lazy load to avoid SSR issues if any
-                                        const kp = Keypair.fromSecretKey(secretKey);
-                                        alert(`Public Key: ${kp.publicKey.toString()}`);
-                                        console.log("Derived Public Key:", kp.publicKey.toString());
-                                    } catch (e: any) {
-                                        alert("Error deriving key: " + e.message);
-                                    }
+                                    if (password === ADMIN_PASS) setIsAuthenticated(true);
+                                    else setAuthError(true);
                                 }}
-                                className="px-6 py-3 bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-lg font-bold text-white transition-all mb-2"
+                                className="w-full bg-black text-white font-black py-4 uppercase tracking-[0.2em] text-xs hover:bg-orange-600 transition-colors shadow-[4px_4px_0px_0px_rgba(255,165,0,1)]"
                             >
-                                Calculate Public Key
+                                REQUEST_ACCESS
                             </button>
-                            <p className="text-xs text-gray-500">
-                                This runs entirely in your browser. The key is not sent anywhere.
-                            </p>
                         </div>
-                    </div>
-                </div>
+                    </motion.div>
+                )}
 
-                {/* Predictions List - HIDDEN IF NOT ADMIN */}
-                {isAdmin && (
-                    <div className="space-y-4">
-                        <h2 className="text-2xl font-bold text-white mb-4">Manage Predictions</h2>
+                {connected && isAdmin && isAuthenticated && (
+                    <div className="space-y-12">
+                        {/* Summary Stats */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:grid-cols-4 md:gap-6">
+                            {[
+                                { label: 'VOTES', val: totalVotes, icon: Users },
+                                { label: 'CLOSED', val: outcomes.length, icon: CheckCircle },
+                                { label: 'POOL', val: `$${totalRewardPool >= 1000 ? (totalRewardPool / 1000).toFixed(1) + 'k' : totalRewardPool}`, icon: DollarSign },
+                                { label: 'WINNERS', val: totalWinners, icon: TrendingUp }
+                            ].map((stat, i) => (
+                                <div key={i} className="border-4 border-black p-4 md:p-6 bg-white shadow-[4px_4px_0px_rgba(0,0,0,1)] md:shadow-[6px_6px_0px_rgba(0,0,0,1)]">
+                                    <stat.icon className="w-5 h-5 mb-3 text-orange-600" />
+                                    <div className="text-xl md:text-3xl font-black tracking-tighter">{stat.val}</div>
+                                    <div className="text-[8px] md:text-[10px] font-mono font-bold text-black/40 uppercase tracking-widest">{stat.label}</div>
+                                </div>
+                            ))}
+                        </div>
 
-                        {predictions.map((prediction, index) => {
-                            const isClosed = isPredictionClosed(prediction.id);
-                            const outcome = outcomes.find(o => o.predictionId === prediction.id);
-                            const rewardData = allRewards.find(r => r.predictionId === prediction.id);
+                        {/* Protocol Management */}
+                        <div className="border-4 border-black p-8 bg-gray-50">
+                            <h2 className="text-2xl font-black uppercase italic mb-6 tracking-tighter flex items-center gap-3">
+                                <Shield className="text-orange-600" /> PROTOCOL_OVERRIDE
+                            </h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="text-[10px] font-mono font-bold text-black/40 uppercase">Treasury Vault PDA</label>
+                                        <div className="text-xs font-mono font-black break-all bg-white border-2 border-black p-3">{treasuryVault || 'OFFLINE'}</div>
+                                    </div>
+                                    <button
+                                        onClick={handleInitializeProtocol}
+                                        className="w-full bg-black text-white py-5 md:py-4 font-black uppercase tracking-widest text-[10px] md:text-xs hover:bg-orange-600 transition-colors active:scale-95"
+                                    >
+                                        Initialize Global Protocol
+                                    </button>
+                                </div>
+                                <div className="flex items-center text-[11px] font-mono font-bold text-black/60 uppercase p-4 border-2 border-dashed border-black/20">
+                                    Initialization creates the central Treasury Vault. Required for global payout logic. Perform once per Mainnet deployment.
+                                </div>
+                            </div>
+                        </div>
 
-                            return (
-                                <motion.div
-                                    key={prediction.id}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: index * 0.05 }}
-                                    className={`bg-gradient-to-br from-gray-900 to-gray-950 border rounded-xl p-6 ${isClosed ? 'border-green-500/30' : 'border-gray-800'
-                                        }`}
-                                >
-                                    <div className="flex items-start justify-between mb-4">
-                                        <div className="flex-1">
-                                            <div className="flex items-center gap-3 mb-2">
-                                                <span className="text-sm font-semibold text-purple-400">#{prediction.id}</span>
-                                                {isClosed && (
-                                                    <span className="px-3 py-1 bg-green-500/20 border border-green-500/30 rounded-full text-xs font-semibold text-green-400">
-                                                        CLOSED - {outcome?.outcome.toUpperCase()}
-                                                    </span>
+                        {/* Daily Oven: Polymarket */}
+                        <div className="border-4 border-black p-8 bg-white">
+                            <div className="flex items-center justify-between mb-8">
+                                <div>
+                                    <h2 className="text-2xl font-black uppercase italic tracking-tighter">DAILY_MARKET_OVEN</h2>
+                                    <p className="text-[10px] font-mono font-bold text-black/40 uppercase">LIVE_POLYM_FEED // FILTER: &lt;24H_EXPIRY</p>
+                                </div>
+                                <button onClick={loadPolymarket} className={`p-4 border-2 border-black hover:bg-orange-50 transition-colors ${isLoadingPoly ? 'animate-spin' : ''}`}>
+                                    <TrendingUp size={20} />
+                                </button>
+                            </div>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                {polyEvents.map((event) => {
+                                    const hoursLeft = Math.max(0, (event.endTime * 1000 - Date.now()) / (1000 * 60 * 60));
+                                    return (
+                                        <div key={event.id} className="border-2 border-black p-5 relative overflow-hidden flex flex-col justify-between group">
+                                            <div className="absolute top-0 right-0 px-3 py-1 bg-black text-white text-[8px] font-black uppercase italic">
+                                                ENDS_IN: {hoursLeft.toFixed(1)}H
+                                            </div>
+                                            <div className="mb-4">
+                                                <h4 className="font-black text-sm uppercase leading-tight pr-12">{event.question}</h4>
+                                                <div className="flex gap-2 mt-3">
+                                                    {event.outcomes.map((o: string, idx: number) => (
+                                                        <span key={idx} className="text-[9px] font-mono font-bold px-2 py-0.5 border border-black/10">
+                                                            {o}: {(event.totals[idx] / event.totals.reduce((a: number, b: number) => a + b, 0) * 100).toFixed(0)}%
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={() => handleMirrorMarket(event)}
+                                                className="w-full py-4 md:py-2 bg-black text-white text-[10px] font-black uppercase tracking-widest hover:bg-orange-600 transition-colors active:bg-orange-700"
+                                            >
+                                                MIRROR_DAILY_SIGNAL
+                                            </button>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Prediction Management */}
+                        <div className="space-y-6">
+                            <h2 className="text-2xl font-black uppercase italic tracking-tighter">PREDICTION_COMMAND_LOG</h2>
+                            <div className="space-y-4">
+                                {dailyPredictions.map((prediction) => {
+                                    const isClosed = isPredictionClosed(prediction.id);
+                                    return (
+                                        <div key={prediction.id} className={`border-2 border-black p-4 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 ${isClosed ? 'bg-gray-50 opacity-60' : 'bg-white'}`}>
+                                            <div>
+                                                <div className="flex items-center gap-3 mb-1">
+                                                    <span className="text-[10px] font-mono font-black text-black/40 uppercase">ID_{prediction.id}</span>
+                                                    {isClosed && <span className="text-[10px] font-black bg-black text-white px-2 py-0.5 uppercase italic">RESOLVED</span>}
+                                                </div>
+                                                <h3 className="font-black text-sm uppercase leading-tight">{prediction.question}</h3>
+                                            </div>
+                                            <div className="grid grid-cols-2 md:flex gap-3 md:gap-2">
+                                                {!isClosed ? (
+                                                    <>
+                                                        <button
+                                                            onClick={() => handleClosePrediction(prediction.id, 'yes')}
+                                                            className="px-4 py-4 md:py-2 border-2 border-black font-black text-[10px] uppercase hover:bg-green-50 active:bg-green-100"
+                                                        >
+                                                            YES
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleClosePrediction(prediction.id, 'no')}
+                                                            className="px-4 py-4 md:py-2 border-2 border-black font-black text-[10px] uppercase hover:bg-red-50 active:bg-red-100"
+                                                        >
+                                                            NO
+                                                        </button>
+                                                    </>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => handleReopenPrediction(prediction.id)}
+                                                        className="col-span-2 px-4 py-4 md:py-2 border-2 border-black font-black text-[10px] uppercase hover:bg-orange-50"
+                                                    >
+                                                        REOPEN_SIG
+                                                    </button>
                                                 )}
                                             </div>
-                                            <h3 className="text-lg font-bold text-white mb-2">{prediction.question}</h3>
-
-                                            {rewardData && (
-                                                <div className="text-[10px] font-mono font-bold text-black/40 uppercase">
-                                                    WINNERS: {rewardData.totalWinners} | REWARD_PER_NODE: {rewardData.rewardPerWinner.toFixed(2)} $PREDICT
-                                                </div>
-                                            )}
                                         </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
 
-                                        <div className="flex gap-2">
-                                            {!isClosed ? (
-                                                <>
-                                                    <button
-                                                        onClick={() => handleClosePrediction(prediction.id, 'yes')}
-                                                        className="px-4 py-2 bg-green-900/30 hover:bg-green-900/50 border border-green-500/30 rounded-lg text-green-400 font-semibold transition-all flex items-center gap-2"
-                                                    >
-                                                        <CheckCircle className="w-4 h-4" />
-                                                        Close YES
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleClosePrediction(prediction.id, 'no')}
-                                                        className="px-4 py-2 bg-red-900/30 hover:bg-red-900/50 border border-red-500/30 rounded-lg text-red-400 font-semibold transition-all flex items-center gap-2"
-                                                    >
-                                                        <XCircle className="w-4 h-4" />
-                                                        Close NO
-                                                    </button>
-                                                </>
-                                            ) : (
-                                                <button
-                                                    onClick={() => handleReopenPrediction(prediction.id)}
-                                                    className="px-4 py-2 bg-yellow-900/30 hover:bg-yellow-900/50 border border-yellow-500/30 rounded-lg text-yellow-400 font-semibold transition-all flex items-center gap-2"
-                                                >
-                                                    <Unlock className="w-4 h-4" />
-                                                    Reopen
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
-                                </motion.div>
-                            );
-                        })}
+                        <div className="pt-12 text-center">
+                            <button onClick={downloadRewardsCSV} className="text-[10px] font-mono font-black text-black/40 uppercase underline hover:text-black">EXPORT_MASTER_LOG_CSV</button>
+                        </div>
+                    </div>
+                )}
+
+                {(!connected || !isAdmin) && (
+                    <div className="max-w-md mx-auto my-20 p-12 border-4 border-dashed border-black/20 text-center">
+                        <Lock className="w-12 h-12 text-black/20 mx-auto mb-6" />
+                        <h2 className="text-xl font-black uppercase italic text-black/40 tracking-tighter">UNAUTHORIZED_ACCESS</h2>
+                        <p className="text-[10px] font-mono text-black/20 uppercase mt-2">Connect protocol authority wallet to engage console</p>
                     </div>
                 )}
             </div>

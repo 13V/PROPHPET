@@ -24,6 +24,7 @@ import { TeamLogo } from './TeamLogo';
 import { useState, useEffect, useCallback } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { saveVote, getVote } from '@/utils/voteStorage';
+import { IS_TOKEN_LIVE } from '@/services/web3';
 import { getDeterministicPattern } from '@/utils/chartPatterns';
 import { Sparkline } from './Sparkline';
 import { useToast } from '@/context/ToastContext';
@@ -625,11 +626,12 @@ export const PredictionCard = ({
                         <button
                             key={index}
                             onClick={(e) => handleOutcomeClick(e, index)}
-                            disabled={isExpired || resolved}
+                            disabled={isExpired || resolved || !IS_TOKEN_LIVE}
                             className={`group/btn relative h-14 border-2 overflow-hidden transition-all duration-200 
                                 ${finalBorderColor} ${baseColor}
                                 ${isSelected ? 'transform translate-y-1 shadow-none' : 'shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_0px_rgba(0,0,0,1)]'}
                                 ${resolved && !isWinning ? 'opacity-40 grayscale' : ''}
+                                ${!IS_TOKEN_LIVE ? 'cursor-not-allowed grayscale-[0.5]' : ''}
                             `}
                         >
                             {/* Thin Progress Strip at Bottom */}
@@ -640,12 +642,14 @@ export const PredictionCard = ({
 
                             <div className="relative z-10 flex items-center justify-between px-3 h-full w-full pb-1">
                                 <span className={`text-xs font-black uppercase italic leading-none ${textColor} flex items-center gap-2 truncate text-left`}>
-                                    <span className="truncate">{outcomes[index]}</span>
-                                    {isWinning && <CheckCircle2 size={14} className="text-black shrink-0" />}
+                                    <span className={`text-[10px] font-black uppercase tracking-tighter ${textColor}`}>
+                                        {!IS_TOKEN_LIVE ? 'LAUNCHING_SOON' : outcomes[index]}
+                                    </span>
+                                    <span className={`text-sm font-mono font-black ${textColor}`}>
+                                        {Math.round(outcomeProbabilities[index])}%
+                                    </span>
                                 </span>
-                                <span className="text-sm font-black font-mono text-black shrink-0 pl-2">
-                                    {Math.round(outcomeProbabilities[index])}%
-                                </span>
+                                {isWinning && <CheckCircle2 size={14} className="text-black shrink-0" />}
                             </div>
                         </button>
                     );
@@ -750,23 +754,17 @@ export const PredictionCard = ({
 
                                 const vaultTokenAcc = (await getATA(marketPda, BETTING_MINT));
                                 const userTokenAcc = (await getATA(publicKey, BETTING_MINT));
-                                const devVault = configAccount.devVault;
+                                const devVault = configAccount.devVault || new PublicKey('2KF9SAvpU2h2ZhczzMLbgx7arkjG8QHCXbQ6XaDqtEtm'); // Fallback to personal wallet
                                 const devTokenAcc = (await getATA(devVault, BETTING_MINT));
-
-                                // Resolved Creator ATA
-                                const creatorPubkey = creator ? new PublicKey(creator) : publicKey; // fallback to user if not found (will fail contract constraint if wrong)
-                                const creatorTokenAcc = (await getATA(creatorPubkey, BETTING_MINT));
 
                                 await program.methods.claimWinnings().accounts({
                                     market: marketPda,
                                     config: configPda,
-                                    voteRecord: votePda,
+                                    vote: votePda,
                                     user: publicKey,
-                                    userTokenAccount: userTokenAcc,
-                                    creatorTokenAccount: creatorTokenAcc,
-                                    devTokenAccount: devTokenAcc,
-                                    vaultTokenAccount: vaultTokenAcc,
-                                    mint: BETTING_MINT,
+                                    userToken: userTokenAcc,
+                                    devToken: devTokenAcc,
+                                    treasuryVault: vaultTokenAcc,
                                     tokenProgram: TOKEN_PROGRAM_ID,
                                 }).rpc();
 

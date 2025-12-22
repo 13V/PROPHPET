@@ -1,340 +1,249 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 
-pub mod state;
-pub mod errors;
-
-use state::*;
-use errors::*;
-
-declare_id!("8f4FusHQaT2KxwpZzRNTV6TpdaEu68bcLFfJKBwZ3koE");
+declare_id!("FEbCHi9LXo1AxKTtv3N9ZaHbs64Zq85b7dYPmjwVXYfv");
 
 #[program]
 pub mod polybet {
     use super::*;
 
-    /// Initialize a new Prediction Market with custom outcomes
-    /// outcomes_count: 2-8 (e.g., 2 for YES/NO, 3 for Trump/Biden/Other)
-    pub fn initialize_market(ctx: Context<InitializeMarket>, question: String, end_timestamp: i64, outcomes_count: u8) -> Result<()> {
-        require!(outcomes_count >= 2 && outcomes_count <= 8, PolybetError::InvalidOutcome);
-        
+    /// 1. Initialize Global Protocol (One-time)
+    pub fn initialize_protocol(ctx: Context<InitializeProtocol>) -> Result<()> {
+        let config = &mut ctx.accounts.config;
+        config.authority = ctx.accounts.authority.key();
+        config.vault_bump = ctx.bumps.treasury_vault;
+        config.bump = ctx.bumps.config;
+        Ok(())
+    }
+
+    /// 2. Initialize Market (No token movement)
+    pub fn initialize_market(
+        ctx: Context<InitializeMarket>, 
+        question: String, 
+        end_timestamp: i64, 
+        outcomes_count: u8,
+        virtual_liquidity: u64,
+        weights: [u32; 8]
+    ) -> Result<()> {
         let market = &mut ctx.accounts.market;
         market.authority = ctx.accounts.authority.key();
         market.question = question;
         market.end_timestamp = end_timestamp;
         market.outcomes_count = outcomes_count;
-        market.total_pot = 0;
-        market.outcome_totals = [0; 8]; // Initialize all to 0
+        market.total_pot = virtual_liquidity;
+        
+        let mut total_weight = 0u32;
+        for i in 0..outcomes_count as usize {
+            total_weight += weights[i];
+        }
+        for i in 0..outcomes_count as usize {
+            if total_weight > 0 {
+                market.outcome_totals[i] = (virtual_liquidity as u128)
+                    .checked_mul(weights[i] as u128).unwrap()
+                    .checked_div(total_weight as u128).unwrap() as u64;
+            }
+        }
         market.resolved = false;
-        market.fees_distributed = false;
-        market.bump = *ctx.bumps.get("market").unwrap();
+        market.bump = ctx.bumps.market;
         Ok(())
     }
 
-    /// Place a Vote (Bet)
+    /// 3. Place Bet (Goes to Global Vault)
     pub fn place_vote(ctx: Context<PlaceVote>, outcome_index: u8, amount: u64) -> Result<()> {
         let market = &mut ctx.accounts.market;
-        require!(!market.resolved, PolybetError::MarketEnded);
-        require!(outcome_index < market.outcomes_count, PolybetError::InvalidOutcome);
-        
         let clock = Clock::get()?;
         require!(clock.unix_timestamp < market.end_timestamp, PolybetError::MarketEnded);
-
-        // 1. Transfer Tokens from User to Vault
-        let cpi_accounts = Transfer {
-            from: ctx.accounts.user_token.to_account_info(),
-            to: ctx.accounts.vault_token.to_account_info(),
-            authority: ctx.accounts.user.to_account_info(),
+        
+        // 90/10 Split: 90% to winners, 10% to Buyback Fund
+        let total_payout = if market.outcome_totals[outcome_index as usize] > 0 {
+            (amount as u128)
+                .checked_mul(90).unwrap() 
+                .checked_mul(market.total_pot as u128).unwrap()
+                .checked_div(100).unwrap()
+                .checked_div(market.outcome_totals[outcome_index as usize] as u128).unwrap() as u64
+        } else {
+            amount
         };
-        let cpi_ctx = CpiContext::new(ctx.accounts.token_program.to_account_info(), cpi_accounts);
-        token::transfer(cpi_ctx, amount)?;
 
-        // 2. Record the Vote
+        // Move tokens to Global Treasury
+        token::transfer(CpiContext::new(ctx.accounts.token_program.to_account_info(), 
+            Transfer { from: ctx.accounts.user_token.to_account_info(), to: ctx.accounts.treasury_vault.to_account_info(), authority: ctx.accounts.user.to_account_info() }), 
+            amount)?;
+
         let vote = &mut ctx.accounts.vote;
         vote.user = ctx.accounts.user.key();
         vote.market = market.key();
         vote.outcome_index = outcome_index;
         vote.amount = amount;
-        vote.claimed = false;
-        vote.bump = *ctx.bumps.get("vote").unwrap();
+        vote.locked_payout = total_payout;
+        // The 10% Buyback Tax is calculated relative to the payout
+        vote.locked_dev_fee = (total_payout as u128).checked_mul(11).unwrap().checked_div(100).unwrap() as u64; // Approx 10% of total
 
-        // 3. Update Market Stats
-        market.total_pot = market.total_pot.checked_add(amount).ok_or(PolybetError::MathOverflow)?;
-        market.outcome_totals[outcome_index as usize] = market.outcome_totals[outcome_index as usize]
-            .checked_add(amount)
-            .ok_or(PolybetError::MathOverflow)?;
-
+        market.total_pot = market.total_pot.checked_add(amount).unwrap();
+        market.outcome_totals[outcome_index as usize] = market.outcome_totals[outcome_index as usize].checked_add(amount).unwrap();
         Ok(())
     }
 
-    /// Resolve Market (Admin Only for MVP)
+    /// 4. Claim Winnings (Paid from Global Vault)
+    pub fn claim_winnings(ctx: Context<ClaimWinnings>) -> Result<()> {
+        let (payout, c_fee, d_fee) = {
+            let market = &ctx.accounts.market;
+            let vote = &ctx.accounts.vote;
+            require!(market.resolved, PolybetError::MarketActive);
+            require!(!vote.claimed, PolybetError::AlreadyClaimed);
+            require!(vote.outcome_index == market.winner_index.unwrap(), PolybetError::InvalidOutcome);
+            (vote.locked_payout, vote.locked_dev_fee)
+        };
+
+        let seeds = &[b"treasury".as_ref(), &[ctx.accounts.config.vault_bump]];
+        let signer = &[&seeds[..]];
+
+        let cpi_program = ctx.accounts.token_program.to_account_info();
+        token::transfer(CpiContext::new_with_signer(cpi_program.clone(), Transfer { from: ctx.accounts.treasury_vault.to_account_info(), to: ctx.accounts.user_token.to_account_info(), authority: ctx.accounts.treasury_vault.to_account_info() }, signer), payout)?;
+        token::transfer(CpiContext::new_with_signer(cpi_program.clone(), Transfer { from: ctx.accounts.treasury_vault.to_account_info(), to: ctx.accounts.dev_token.to_account_info(), authority: ctx.accounts.treasury_vault.to_account_info() }, signer), d_fee)?;
+
+        ctx.accounts.vote.claimed = true;
+        Ok(())
+    }
+
     pub fn resolve_market(ctx: Context<ResolveMarket>, winner_index: u8) -> Result<()> {
         let market = &mut ctx.accounts.market;
-        require!(!market.resolved, PolybetError::MarketEnded);
-        require!(winner_index < market.outcomes_count, PolybetError::InvalidOutcome);
-        
-        // In real world, check Timestamp or Oracle signature
-        
         market.resolved = true;
         market.winner_index = Some(winner_index);
         Ok(())
     }
 
-    /// Distribute Fees to Creator (10%) and Burn Address (5%)
-    /// Multi-outcome version: Sums all losing outcomes for fee calculation
-    /// Can only be called once by market authority
-    pub fn distribute_fees(ctx: Context<DistributeFees>) -> Result<()> {
-        let market = &mut ctx.accounts.market;
-        require!(market.resolved, PolybetError::MarketActive);
-        require!(!market.fees_distributed, PolybetError::AlreadyClaimed);
-        require!(market.authority == ctx.accounts.authority.key(), PolybetError::Unauthorized);
-
-        let winner_index = market.winner_index.ok_or(PolybetError::OutcomeNotSet)?;
-        
-        // Sum all losing outcomes
-        let mut total_losing = 0u64;
-        for i in 0..market.outcomes_count {
-            if i != winner_index {
-                total_losing = total_losing
-                    .checked_add(market.outcome_totals[i as usize])
-                    .ok_or(PolybetError::MathOverflow)?;
-            }
-        }
-
-        // Calculate fees from losing pool
-        let creator_fee = (total_losing as u128)
-            .checked_mul(1000) // 10%
-            .ok_or(PolybetError::MathOverflow)?
-            .checked_div(10000)
-            .ok_or(PolybetError::MathOverflow)? as u64;
-
-        let burn_fee = (total_losing as u128)
-            .checked_mul(500) // 5%
-            .ok_or(PolybetError::MathOverflow)?
-            .checked_div(10000)
-            .ok_or(PolybetError::MathOverflow)? as u64;
-
-        // Transfer creator fee
-        let seeds = &[
-            b"market".as_ref(), 
-            market.authority.as_ref(),
-            &[market.bump]
-        ];
+    pub fn sweep_profit(ctx: Context<SweepProfit>, amount: u64) -> Result<()> {
+        let seeds = &[b"treasury".as_ref(), &[ctx.accounts.config.vault_bump]];
         let signer = &[&seeds[..]];
-        let cpi_accounts = Transfer {
-            from: ctx.accounts.vault_token.to_account_info(),
-            to: ctx.accounts.creator_token.to_account_info(),
-            authority: ctx.accounts.market.to_account_info(),
-        };
-        let cpi_ctx = CpiContext::new_with_signer(
-            ctx.accounts.token_program.to_account_info(), 
-            cpi_accounts, 
-            signer
-        );
-        token::transfer(cpi_ctx, creator_fee)?;
-
-        // Transfer burn fee
-        let burn_accounts = Transfer {
-            from: ctx.accounts.vault_token.to_account_info(),
-            to: ctx.accounts.burn_token.to_account_info(),
-            authority: ctx.accounts.market.to_account_info(),
-        };
-        let burn_ctx = CpiContext::new_with_signer(
-            ctx.accounts.token_program.to_account_info(), 
-            burn_accounts, 
-            signer
-        );
-        token::transfer(burn_ctx, burn_fee)?;
-
-        market.fees_distributed = true;
-        Ok(())
-    }
-
-    /// Claim Winnings with Proportional Payout (Multi-Outcome Support)
-    /// Winners split 85% of ALL losing outcomes proportionally
-    pub fn claim_winnings(ctx: Context<ClaimWinnings>) -> Result<()> {
-        let market = &ctx.accounts.market;
-        let vote = &mut ctx.accounts.vote;
-
-        require!(market.resolved, PolybetError::MarketActive);
-        require!(!vote.claimed, PolybetError::AlreadyClaimed);
-        
-        let winner_index = market.winner_index.ok_or(PolybetError::OutcomeNotSet)?;
-        require!(vote.outcome_index == winner_index, PolybetError::InvalidOutcome);
-
-        // Get winning pool total
-        let winning_total = market.outcome_totals[winner_index as usize];
-        require!(winning_total > 0, PolybetError::MathOverflow);
-        
-        // Sum ALL losing outcomes
-        let mut total_losing = 0u64;
-        for i in 0..market.outcomes_count {
-            if i != winner_index {
-                total_losing = total_losing
-                    .checked_add(market.outcome_totals[i as usize])
-                    .ok_or(PolybetError::MathOverflow)?;
-            }
-        }
-
-        // Calculate user's proportional share of winnings
-        let user_share_of_winning_pool = (vote.amount as u128)
-            .checked_mul(10000)
-            .ok_or(PolybetError::MathOverflow)?
-            .checked_div(winning_total as u128)
-            .ok_or(PolybetError::MathOverflow)?;
-
-        // 85% of ALL losing pools go to winners
-        let winning_pool = (total_losing as u128)
-            .checked_mul(8500)
-            .ok_or(PolybetError::MathOverflow)?
-            .checked_div(10000)
-            .ok_or(PolybetError::MathOverflow)? as u64;
-
-        let user_winnings = (winning_pool as u128)
-            .checked_mul(user_share_of_winning_pool)
-            .unwrap()
-            .checked_div(10000)
-            .unwrap() as u64;
-
-        // Total payout = original bet + winnings
-        let total_payout = vote.amount
-            .checked_add(user_winnings)
-            .ok_or(PolybetError::MathOverflow)?;
-
-        // Transfer from Vault to User
-        let seeds = &[
-            b"market".as_ref(), 
-            market.authority.as_ref(),
-            &[market.bump]
-        ];
-        let signer = &[&seeds[..]];
-
-        let cpi_accounts = Transfer {
-            from: ctx.accounts.vault_token.to_account_info(),
-            to: ctx.accounts.user_token.to_account_info(),
-            authority: ctx.accounts.market.to_account_info(),
-        };
-        let cpi_ctx = CpiContext::new_with_signer(
-            ctx.accounts.token_program.to_account_info(), 
-            cpi_accounts, 
-            signer
-        );
-        token::transfer(cpi_ctx, total_payout)?;
-
-        vote.claimed = true;
+        token::transfer(CpiContext::new_with_signer(ctx.accounts.token_program.to_account_info(), 
+            Transfer { from: ctx.accounts.treasury_vault.to_account_info(), to: ctx.accounts.destination_token.to_account_info(), authority: ctx.accounts.treasury_vault.to_account_info() }, 
+            signer), amount)?;
         Ok(())
     }
 }
 
 #[derive(Accounts)]
-#[instruction(question: String, end_timestamp: i64, outcomes_count: u8)]
-pub struct InitializeMarket<'info> {
-    #[account(
-        init, 
-        payer = authority, 
-        space = Market::SPACE,
-        seeds = [b"market", authority.key().as_ref(), question.as_bytes()], 
-        bump
-    )]
-    pub market: Account<'info, Market>,
-    
-    #[account(
-        init,
-        payer = authority,
-        token::mint = mint,
-        token::authority = market, // Market PDA owns the tokens
-    )]
-    pub vault_token: Account<'info, TokenAccount>,
-
+pub struct InitializeProtocol<'info> {
+    #[account(init, payer = authority, space = ProtocolConfig::SPACE, seeds = [b"config"], bump)]
+    pub config: Account<'info, ProtocolConfig>,
+    #[account(init, payer = authority, token::mint = mint, token::authority = treasury_vault, seeds = [b"treasury"], bump)]
+    pub treasury_vault: Account<'info, TokenAccount>,
     pub mint: Account<'info, token::Mint>,
-
     #[account(mut)]
     pub authority: Signer<'info>,
-    
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
     pub rent: Sysvar<'info, Rent>,
 }
 
 #[derive(Accounts)]
+#[instruction(question: String, end_timestamp: i64, outcomes_count: u8, virtual_liquidity: u64)]
+pub struct InitializeMarket<'info> {
+    #[account(init, payer = authority, space = Market::SPACE, seeds = [b"market", authority.key().as_ref(), question.as_bytes()], bump)]
+    pub market: Account<'info, Market>,
+    #[account(mut)]
+    pub authority: Signer<'info>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
 pub struct PlaceVote<'info> {
     #[account(mut)]
     pub market: Account<'info, Market>,
-
-    #[account(
-        init, 
-        payer = user, 
-        space = Vote::SPACE,
-        seeds = [b"vote", market.key().as_ref(), user.key().as_ref()], 
-        bump
-    )]
+    #[account(init, payer = user, space = Vote::SPACE, seeds = [b"vote", market.key().as_ref(), user.key().as_ref()], bump)]
     pub vote: Account<'info, Vote>,
-
-    #[account(mut)]
-    pub vault_token: Account<'info, TokenAccount>,
-
+    #[account(mut, seeds = [b"treasury"], bump = config.vault_bump)]
+    pub treasury_vault: Account<'info, TokenAccount>,
     #[account(mut)]
     pub user_token: Account<'info, TokenAccount>,
-
+    pub config: Account<'info, ProtocolConfig>,
     #[account(mut)]
     pub user: Signer<'info>,
-
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
 }
 
 #[derive(Accounts)]
-pub struct ResolveMarket<'info> {
-    #[account(
-        mut, 
-        has_one = authority
-    )]
-    pub market: Account<'info, Market>,
-    pub authority: Signer<'info>,
-}
-
-#[derive(Accounts)]
-pub struct DistributeFees<'info> {
-    #[account(
-        mut,
-        has_one = authority
-    )]
-    pub market: Account<'info, Market>,
-
-    #[account(mut)]
-    pub vault_token: Account<'info, TokenAccount>,
-
-    #[account(mut)]
-    pub creator_token: Account<'info, TokenAccount>,
-
-    #[account(mut)]
-    pub burn_token: Account<'info, TokenAccount>,
-
-    pub authority: Signer<'info>,
-    pub token_program: Program<'info, Token>,
-}
-
-#[derive(Accounts)]
 pub struct ClaimWinnings<'info> {
-    #[account(mut)]
+    pub config: Account<'info, ProtocolConfig>,
     pub market: Account<'info, Market>,
-
-    #[account(
-        mut,
-        seeds = [b"vote", market.key().as_ref(), user.key().as_ref()],
-        bump = vote.bump,
-        has_one = user
-    )]
+    #[account(mut, seeds = [b"vote", market.key().as_ref(), user.key().as_ref()], bump = vote.bump, has_one = user)]
     pub vote: Account<'info, Vote>,
-
-    #[account(mut)]
-    pub vault_token: Account<'info, TokenAccount>,
-
+    #[account(mut, seeds = [b"treasury"], bump = config.vault_bump)]
+    pub treasury_vault: Account<'info, TokenAccount>,
     #[account(mut)]
     pub user_token: Account<'info, TokenAccount>,
-
+    #[account(mut)]
+    pub creator_token: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub dev_token: Account<'info, TokenAccount>,
     #[account(mut)]
     pub user: Signer<'info>,
-
     pub token_program: Program<'info, Token>,
+}
+
+#[derive(Accounts)]
+pub struct ResolveMarket<'info> {
+    #[account(mut, has_one = authority)]
+    pub market: Account<'info, Market>,
+    pub authority: Signer<'info>,
+}
+
+#[derive(Accounts)]
+pub struct SweepProfit<'info> {
+    #[account(has_one = authority)]
+    pub config: Account<'info, ProtocolConfig>,
+    #[account(mut, seeds = [b"treasury"], bump = config.vault_bump)]
+    pub treasury_vault: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub destination_token: Account<'info, TokenAccount>,
+    pub authority: Signer<'info>,
+    pub token_program: Program<'info, Token>,
+}
+
+#[account]
+pub struct ProtocolConfig {
+    pub authority: Pubkey,
+    pub vault_bump: u8,
+    pub bump: u8,
+}
+
+#[account]
+pub struct Market {
+    pub authority: Pubkey,
+    pub question: String,
+    pub end_timestamp: i64,
+    pub outcomes_count: u8,
+    pub total_pot: u64,
+    pub outcome_totals: [u64; 8],
+    pub resolved: bool,
+    pub winner_index: Option<u8>,
+    pub bump: u8,
+}
+
+#[account]
+pub struct Vote {
+    pub user: Pubkey,
+    pub market: Pubkey,
+    pub outcome_index: u8,
+    pub amount: u64,
+    pub locked_payout: u64,
+    pub locked_creator_fee: u64,
+    pub locked_dev_fee: u64,
+    pub claimed: bool,
+    pub bump: u8,
+}
+
+impl ProtocolConfig { pub const SPACE: usize = 8 + 32 + 1 + 1; }
+impl Market { pub const SPACE: usize = 8 + 32 + (4 + 64) + 8 + 1 + 8 + 64 + 1 + 2 + 1; }
+impl Vote { pub const SPACE: usize = 8 + 32 + 32 + 1 + 8 + 8 + 8 + 8 + 1 + 1; }
+
+#[error_code]
+pub enum PolybetError {
+    #[msg("Market ended.")] MarketEnded,
+    #[msg("Market active.")] MarketActive,
+    #[msg("Outcome mismatch.")] InvalidOutcome,
+    #[msg("Already claimed.")] AlreadyClaimed,
+    #[msg("Unauthorized.")] Unauthorized,
 }

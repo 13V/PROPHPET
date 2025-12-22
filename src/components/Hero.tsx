@@ -35,7 +35,7 @@ export const Hero = () => {
                             <div className="inline-flex items-center gap-2 bg-black text-white text-[10px] font-black px-4 py-1 uppercase tracking-[0.3em] italic shadow-[4px_4px_0px_0px_rgba(234,88,12,1)]">
                                 MISSION_MANIFEST_V1.0
                             </div>
-                            <h2 className="text-6xl md:text-8xl font-black text-black uppercase tracking-tighter italic leading-[0.85]">
+                            <h2 className="text-5xl md:text-8xl font-black text-black uppercase tracking-tighter italic leading-[0.85]">
                                 DECENTRALIZED<br />
                                 <span className="text-orange-600">INTELLIGENCE</span>
                             </h2>
@@ -43,7 +43,7 @@ export const Hero = () => {
                                 PolyPredict is a high-fidelity oracle protocol designed for precision forecasting.
                                 We transform market volatility into verifiable intelligence through decentralized skin-in-the-game mechanics.
                                 <span className="block mt-4 text-black border-l-4 border-orange-600 pl-4">
-                                    PROTOCOL_INCENTIVE: 5% YIELD IS ROUTED TO SIGNAL ARCHITECTS (INITIALIZERS) TO REWARD ACCURATE MARKET DEPLOYMENT.
+                                    PROTOCOL_ECONOMICS: 10% OF WINNINGS ARE ROUTED TO THE BUYBACK FUND TO SUPPORT THE $PREDICT ECOSYSTEM.
                                 </span>
                             </p>
                         </div>
@@ -100,8 +100,8 @@ export const Hero = () => {
                             <div className="mt-12 pt-8 border-t border-white/20">
                                 <div className="space-y-4">
                                     <div className="flex items-center gap-3">
-                                        <div className="px-2 py-0.5 bg-orange-600 text-white text-[9px] font-black uppercase tracking-widest">PROTOCOL_FEE: 10%</div>
-                                        <div className="px-2 py-0.5 bg-white/10 text-white/60 text-[9px] font-black uppercase tracking-widest border border-white/10">SPLIT: 5% CREATOR / 5% DEV</div>
+                                        <div className="px-2 py-0.5 bg-orange-600 text-white text-[9px] font-black uppercase tracking-widest">BUYBACK_TAX: 10%</div>
+                                        <div className="px-2 py-0.5 bg-white/10 text-white/60 text-[9px] font-black uppercase tracking-widest border border-white/10">MISSION: $PREDICT_BUYBACKS</div>
                                     </div>
                                     <p className="text-[9px] font-mono text-white/20 uppercase tracking-[0.2em] leading-relaxed">
                                         NOTICE: ALL BETS ARE FINAL. VERIFICATION IS SETTLED BY DECENTRALIZED ORACLES OR ADMIN CONSENSUS. 5% YIELD IS ROUTED DIRECTLY TO THE WALLET THAT INITIALIZED THE MARKET.

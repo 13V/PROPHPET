@@ -53,11 +53,11 @@ export const Stats = ({ marketCount = 0 }: { marketCount?: number }) => {
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
                             transition={{ delay: index * 0.1 }}
-                            className="bg-white p-12 border-black border-r-2 last:border-r-0 md:border-r-2 group hover:bg-black transition-all text-center"
+                            className="bg-white p-6 md:p-12 border-black border-r-2 last:border-r-0 md:border-r-2 group hover:bg-black transition-all text-center"
                         >
-                            <stat.icon className="w-8 h-8 mx-auto mb-6 text-orange-600 group-hover:text-white transition-colors" strokeWidth={3} />
-                            <div className="text-5xl font-black text-black group-hover:text-white mb-2 font-mono tracking-tighter italic leading-none">{stat.value}</div>
-                            <div className="text-black/40 group-hover:text-white/60 text-[10px] uppercase font-black tracking-widest leading-none">{stat.label}</div>
+                            <stat.icon className="w-6 h-6 md:w-8 md:h-8 mx-auto mb-4 md:mb-6 text-orange-600 group-hover:text-white transition-colors" strokeWidth={3} />
+                            <div className="text-2xl md:text-5xl font-black text-black group-hover:text-white mb-1 md:mb-2 font-mono tracking-tighter italic leading-none">{stat.value}</div>
+                            <div className="text-black/40 group-hover:text-white/60 text-[8px] md:text-[10px] uppercase font-black tracking-widest leading-none">{stat.label}</div>
                         </motion.div>
                     ))}
                 </div>

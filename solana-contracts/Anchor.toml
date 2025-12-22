@@ -3,10 +3,10 @@ seeds = false
 skip-lint = false
 
 [programs.localnet]
-polybet = "DcNb3pYGVqo1AdMdJGycDpRPb6d1nPsg3z4x5T714YW"
+polybet = "FEbCHi9LXo1AxKTtv3N9ZaHbs64Zq85b7dYPmjwVXYfv"
 
 [programs.mainnet]
-polybet = "DcNb3pYGVqo1AdMdJGycDpRPb6d1nPsg3z4x5T714YW"
+polybet = "FEbCHi9LXo1AxKTtv3N9ZaHbs64Zq85b7dYPmjwVXYfv"
 
 [registry]
 url = "https://api.apr.dev"
