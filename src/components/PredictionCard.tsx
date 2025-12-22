@@ -565,7 +565,7 @@ export const PredictionCard = ({
                                 data={pythData || getDeterministicPattern(id, outcomeProbabilities[0])}
                                 width={56}
                                 height={32}
-                                color={resolved ? '#4b5563' : '#000000'}
+                                color={resolved ? '#4b5563' : '#f97316'}
                             />
                         </div>
                     </div>

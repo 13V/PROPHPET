@@ -19,7 +19,7 @@ export const MarketWarRoom = ({ isOpen, onClose, market }: MarketWarRoomProps) =
     const [pythData, setPythData] = useState<number[] | null>(null);
     const [lastPriceUpdate, setLastPriceUpdate] = useState(0);
 
-    if (!market) return null;
+    // Move early return down to fix Hook rule violation
 
     // Extraction Logic for "Up/Down" markets
     // Priority: Question -> Slug -> EventTitle -> Description
@@ -231,8 +231,8 @@ export const MarketWarRoom = ({ isOpen, onClose, market }: MarketWarRoomProps) =
 
     const CategoryIcon = getCategoryIcon(market.category || '');
     const theme = getCategoryTheme(market.category || '');
-    const isExpired = Date.now() > (market.endTime * 1000);
-    const resolved = market.resolved;
+    const isExpired = market ? Date.now() > (market.endTime * 1000) : false;
+    const resolved = market?.resolved;
 
     const shareToX = () => {
         const text = encodeURIComponent(`I'm predicting on "${market.question}" using @PolyBet! 🔮\n\nPredictions live on Solana. #POLYBET #Solana`);
@@ -242,7 +242,7 @@ export const MarketWarRoom = ({ isOpen, onClose, market }: MarketWarRoomProps) =
 
     return (
         <AnimatePresence>
-            {isOpen && (
+            {isOpen && market && (
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -360,7 +360,7 @@ export const MarketWarRoom = ({ isOpen, onClose, market }: MarketWarRoomProps) =
                                             data={pythData || market.sparklineData || [30, 40, 35, 50, 45, 60, 55, 74, 70, 85]}
                                             width={1000}
                                             height={150}
-                                            color="#ff5722"
+                                            color="#f97316"
                                         />
                                     </div>
                                 </div>

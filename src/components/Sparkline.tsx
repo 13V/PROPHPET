@@ -60,7 +60,7 @@ export const Sparkline: React.FC<SparklineProps> = ({
                 initial={{ pathLength: 0, opacity: 0 }}
                 animate={{ pathLength: 1, opacity: 1 }}
                 transition={{ duration: 1.5, ease: "easeInOut" }}
-                style={{ filter: `drop-shadow(0 0 4px ${color}80)` }}
+                style={{ filter: `drop-shadow(0 0 2px ${color}) drop-shadow(0 0 4px ${color}80)` }}
             />
         </svg>
     );
