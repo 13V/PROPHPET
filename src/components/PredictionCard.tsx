@@ -194,7 +194,18 @@ export const PredictionCard = ({
             }
         }
 
-        // 2. Fallback to binary outcomes if category is SPORTS
+        // 2. Crypto Asset Check (for background logos)
+        const assetMatch = fullSource.match(/(bitcoin|btc|ethereum|eth|solana|sol)/i);
+        if (assetMatch) {
+            const asset = assetMatch[0].toLowerCase();
+            // Normalize to primary keys for cleaner logos
+            if (asset === 'btc') return ['bitcoin', 'bitcoin'];
+            if (asset === 'eth') return ['ethereum', 'ethereum'];
+            if (asset === 'sol') return ['solana', 'solana'];
+            return [asset, asset];
+        }
+
+        // 3. Fallback to binary outcomes if category is SPORTS
         const isSport = category.toLowerCase().includes('sport') || (displayCategory === 'SPORTS');
         if (isSport && outcomes.length === 2) {
             // Filter out generic Yes/No

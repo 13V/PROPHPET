@@ -49,7 +49,15 @@ const NBA_LOGOS: Record<string, string> = {
     'hornets': 'https://upload.wikimedia.org/wikipedia/en/c/c4/Charlotte_Hornets_%282014%29.svg',
     'heat': 'https://upload.wikimedia.org/wikipedia/en/f/fb/Miami_Heat_logo.svg',
     'magic': 'https://upload.wikimedia.org/wikipedia/en/1/10/Orlando_Magic_logo.svg',
-    'wizards': 'https://upload.wikimedia.org/wikipedia/en/0/02/Washington_Wizards_logo.svg'
+    'wizards': 'https://upload.wikimedia.org/wikipedia/en/0/02/Washington_Wizards_logo.svg',
+
+    // Crypto
+    'bitcoin': 'https://upload.wikimedia.org/wikipedia/commons/4/46/Bitcoin.svg',
+    'btc': 'https://upload.wikimedia.org/wikipedia/commons/4/46/Bitcoin.svg',
+    'ethereum': 'https://upload.wikimedia.org/wikipedia/commons/6/6f/Ethereum-icon-purple.svg',
+    'eth': 'https://upload.wikimedia.org/wikipedia/commons/6/6f/Ethereum-icon-purple.svg',
+    'solana': 'https://upload.wikimedia.org/wikipedia/commons/3/34/Solana_cryptocurrency_two.svg',
+    'sol': 'https://upload.wikimedia.org/wikipedia/commons/3/34/Solana_cryptocurrency_two.svg'
 };
 
 const getLogoUrl = (name: string): string | null => {
