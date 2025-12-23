@@ -1,3 +1,4 @@
+// PolyPredict Web3 Service - Build v1.1.0-Stabilized
 import { Connection, PublicKey, Transaction, Commitment, SystemProgram, SYSVAR_RENT_PUBKEY } from '@solana/web3.js';
 import { Program, AnchorProvider, Idl, BN } from '@coral-xyz/anchor';
 import idl from '@/idl/polybet.json';
