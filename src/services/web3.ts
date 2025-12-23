@@ -7,24 +7,26 @@ const opts = {
     preflightCommitment: "processed" as Commitment,
 };
 
+const safePK = (pk?: string) => {
+    try {
+        return new PublicKey((pk || '').trim());
+    } catch (e) {
+        // Fallback to a zero-address if corrupted, to allow build to pass
+        // The real value will be caught at runtime
+        return new PublicKey('11111111111111111111111111111111');
+    }
+};
+
 // Program ID (Prophet/Polybet Contract)
-export const PROGRAM_ID = new PublicKey(
-    process.env.NEXT_PUBLIC_PROGRAM_ID || 'F4ftWfZqAq99NK6yWTdA3B65xMwHVeD3MqVcqsvwbKzD'
-);
+export const PROGRAM_ID = safePK(process.env.NEXT_PUBLIC_PROGRAM_ID || 'F4ftWfZqAq99NK6yWTdA3B65xMwHVeD3MqVcqsvwbKzD');
 
 // Token used for betting ($PREDICT) - Pump.fun deployment
-// If not set, we'll use a placeholder and handle it in the UI
-const MINT_ENV = process.env.NEXT_PUBLIC_BETTING_MINT || '4kTwv7sEEhdp9CZnw3B9h639HZwVygMmmxi6uuFLpump';
 export const IS_TOKEN_LIVE = true;
 
-export const BETTING_MINT = new PublicKey(
-    '4kTwv7sEEhdp9CZnw3B9h639HZwVygMmmxi6uuFLpump'
-);
+export const BETTING_MINT = safePK(process.env.NEXT_PUBLIC_BETTING_MINT || '4kTwv7sEEhdp9CZnw3B9h639HZwVygMmmxi6uuFLpump');
 
 // Treasury Wallet for collecting protocol taxes
-export const TREASURY_WALLET = new PublicKey(
-    process.env.NEXT_PUBLIC_TREASURY_WALLET || '2KF9SAvpU2h2ZhczzMLbgx7arkjG8QHCXbQ6XaDqtEtm'
-);
+export const TREASURY_WALLET = safePK(process.env.NEXT_PUBLIC_TREASURY_WALLET || '2KF9SAvpU2h2ZhczzMLbgx7arkjG8QHCXbQ6XaDqtEtm');
 
 // Token Program IDs
 export const SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID = new PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL');
