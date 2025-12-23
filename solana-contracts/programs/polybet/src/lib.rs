@@ -1,9 +1,10 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token_interface::{self, Mint, TokenAccount, TokenInterface, Transfer};
+use anchor_spl::token_interface::{Mint, TokenAccount};
 use solana_program::pubkey;
 use anchor_lang::solana_program::{
     program::invoke_signed,
     system_instruction,
+    instruction::{AccountMeta, Instruction},
 };
 
 declare_id!("8m7wUvDdNc7U8nyutZKPLM4zn5CXuJWXovpKE6PvuiEj");
@@ -48,19 +49,28 @@ pub mod polybet {
             signer_seeds,
         )?;
 
-        // 2. Initialize Token Account (Manual CPI for TokenzQdBnBLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb)
-        let ix = anchor_spl::token_2022::spl_token_2022::instruction::initialize_account3(
-            &TOKEN_2022_ID,
-            ctx.accounts.treasury_vault.key,
-            &ctx.accounts.mint.key(),
-            ctx.accounts.treasury_vault.key, // Vault is its own authority
-        ).map_err(|_| ProgramError::InvalidInstructionData)?;
+        // 2. Initialize Token Account (Manual bytes to bypass library typos and checks)
+        // Discriminator for InitializeAccount3 is 18
+        let mut data = vec![18];
+        data.extend_from_slice(&ctx.accounts.treasury_vault.key().to_bytes()); // owner is the vault itself
+
+        let accounts = vec![
+            AccountMeta::new(ctx.accounts.treasury_vault.key(), false),
+            AccountMeta::new_readonly(ctx.accounts.mint.key(), false),
+        ];
+
+        let ix = Instruction {
+            program_id: TOKEN_2022_ID,
+            accounts,
+            data,
+        };
 
         invoke_signed(
             &ix,
             &[
                 ctx.accounts.treasury_vault.to_account_info(),
                 ctx.accounts.mint.to_account_info(),
+                ctx.accounts.token_program.to_account_info(),
             ],
             signer_seeds,
         )?;
