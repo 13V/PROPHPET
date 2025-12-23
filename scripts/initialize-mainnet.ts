@@ -18,8 +18,8 @@ const PROGRAM_ID = new PublicKey("EtckMubyhEtQWfEVcnbka16sghSsXMb8tKf3AWHFmSPf")
 const MINT_ADDRESS = new PublicKey("4kTwv7sEEhdp9CZnw3B9h639HZwVygMmmxi6uuFLpump");
 const WALLET_PATH = path.join(process.env.HOME || "", ".config/solana/id.json");
 
-// Load IDL
-const idlPath = path.join(__dirname, "../src/idl/polybet.json");
+// Load IDL (Use process.cwd since we are running from project root)
+const idlPath = path.join(process.cwd(), "src/idl/polybet.json");
 const idl = JSON.parse(fs.readFileSync(idlPath, "utf8"));
 
 async function main() {
