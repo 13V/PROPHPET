@@ -2,7 +2,7 @@ import { Connection, PublicKey, Transaction, Commitment, SystemProgram, SYSVAR_R
 import { Program, AnchorProvider, Idl, BN } from '@coral-xyz/anchor';
 import idl from '@/idl/polybet.json';
 
-const network = process.env.NEXT_PUBLIC_RPC_URL || 'https://solana-rpc.publicnode.com';
+const network = 'https://responsive-serene-mountain.solana-mainnet.quiknode.pro/3bbbfd1c58e3e0392db876741a554ba776af21d7/';
 const opts = {
     preflightCommitment: "processed" as Commitment,
 };
