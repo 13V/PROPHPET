@@ -175,6 +175,11 @@ pub struct ClaimWinnings<'info> {
     #[account(mut, seeds = [b"treasury"], bump = config.vault_bump)]
     pub treasury_vault: InterfaceAccount<'info, TokenAccount>,
     #[account(mut)]
+    pub user_token: InterfaceAccount<'info, TokenAccount>,
+    #[account(mut)]
+    pub dev_token: InterfaceAccount<'info, TokenAccount>,
+    #[account(mut)]
+    pub user: Signer<'info>,
     pub token_program: Program<'info, Token2022>,
 }
 
