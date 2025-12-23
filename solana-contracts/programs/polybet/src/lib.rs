@@ -24,35 +24,40 @@ pub mod polybet {
         config.bump = ctx.bumps.config;
 
         // Manual Initialization of Treasury Vault (Bypassing Anchor Macro)
-        // Space for TokenAccount: 165 bytes
-        let space = 165;
+        // Solscan confirms Token-2022 with extensions. 
+        // 173 bytes = 165 (Base) + 8 (TransferFeeAmount extension)
+        let space = 173;
         let rent = Rent::get()?;
         let lamports = rent.minimum_balance(space);
 
         let vault_seeds = &[b"treasury".as_ref(), &[ctx.bumps.treasury_vault]];
         let signer_seeds = &[&vault_seeds[..]];
 
-        // 1. Create Account
-        invoke_signed(
-            &system_instruction::create_account(
-                ctx.accounts.authority.key,
-                ctx.accounts.treasury_vault.key,
-                lamports,
-                space as u64,
-                &TOKEN_2022_ID,
-            ),
-            &[
-                ctx.accounts.authority.to_account_info(),
-                ctx.accounts.treasury_vault.to_account_info(),
-                ctx.accounts.system_program.to_account_info(),
-            ],
-            signer_seeds,
-        )?;
+        // 1. Create Account (Handle case where it might already exist from previous failure)
+        // Check if the account is currently owned by the System Program
+        if ctx.accounts.treasury_vault.owner == &System::id() {
+            invoke_signed(
+                &system_instruction::create_account(
+                    ctx.accounts.authority.key,
+                    ctx.accounts.treasury_vault.key,
+                    lamports,
+                    space as u64,
+                    &TOKEN_2022_ID,
+                ),
+                &[
+                    ctx.accounts.authority.to_account_info(),
+                    ctx.accounts.treasury_vault.to_account_info(),
+                    ctx.accounts.system_program.to_account_info(),
+                ],
+                signer_seeds,
+            )?;
+        }
 
         // 2. Initialize Token Account (Manual bytes to bypass library typos and checks)
-        // Discriminator for InitializeAccount3 is 18
+        // Discriminator for InitializeAccount3 is 18.
+        // Data format: [18, 32 bytes of owner pubkey]
         let mut data = vec![18];
-        data.extend_from_slice(&ctx.accounts.treasury_vault.key().to_bytes()); // owner is the vault itself
+        data.extend_from_slice(&ctx.accounts.treasury_vault.key().to_bytes());
 
         let accounts = vec![
             AccountMeta::new(ctx.accounts.treasury_vault.key(), false),
