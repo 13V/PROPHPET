@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{self, Mint, TokenAccount, TokenInterface, Transfer};
 use solana_program::pubkey;
 
-declare_id!("EtckMubyhEtQWfEVcnbka16sghSsXMb8tKf3AWHFmSPf");
+declare_id!("8m7wUvDdNc7U8nyutZKPLM4zn5CXuJWXovpKE6PvuiEj");
 
 const TOKEN_2022_ID: Pubkey = pubkey!("TokenzQdBnBLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb");
 

@@ -9,7 +9,7 @@ anchor_version = "0.29.0"
 polybet = "FEbCHi9LXo1AxKTtv3N9ZaHbs64Zq85b7dYPmjwVXYfv"
 
 [programs.mainnet]
-polybet = "EtckMubyhEtQWfEVcnbka16sghSsXMb8tKf3AWHFmSPf"
+polybet = "8m7wUvDdNc7U8nyutZKPLM4zn5CXuJWXovpKE6PvuiEj"
 
 [registry]
 url = "https://api.apr.dev"

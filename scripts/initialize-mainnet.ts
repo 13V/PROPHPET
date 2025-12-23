@@ -14,7 +14,7 @@ import * as path from "path";
 
 // Configuration
 const RPC_URL = "https://responsive-serene-mountain.solana-mainnet.quiknode.pro/3bbbfd1c58e3e0392db876741a554ba776af21d7/";
-const PROGRAM_ID = new PublicKey("EtckMubyhEtQWfEVcnbka16sghSsXMb8tKf3AWHFmSPf");
+const PROGRAM_ID = new PublicKey("8m7wUvDdNc7U8nyutZKPLM4zn5CXuJWXovpKE6PvuiEj");
 const MINT_ADDRESS = new PublicKey("4kTwv7sEEhdp9CZnw3B9h639HZwVygMmmxi6uuFLpump");
 const WALLET_PATH = path.join(process.env.HOME || "", ".config/solana/id.json");
 

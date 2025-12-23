@@ -20,7 +20,7 @@ const safePK = (pk?: string) => {
 
 // Program ID (Prophet/Polybet Contract)
 // FORCE HARDCODE: Ignoring environment variables to prevent Vercel caching old IDs
-export const PROGRAM_ID = safePK('EtckMubyhEtQWfEVcnbka16sghSsXMb8tKf3AWHFmSPf');
+export const PROGRAM_ID = safePK('8m7wUvDdNc7U8nyutZKPLM4zn5CXuJWXovpKE6PvuiEj');
 
 // Token used for betting ($PREDICT) - Pump.fun deployment
 export const IS_TOKEN_LIVE = true;
