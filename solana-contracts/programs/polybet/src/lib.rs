@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token_interface::{Mint, TokenAccount};
+use anchor_spl::token_interface::{self, Mint, TokenAccount, TokenInterface, Transfer};
 use solana_program::pubkey;
 use anchor_lang::solana_program::{
     program::invoke_signed,
