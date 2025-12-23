@@ -1,5 +1,6 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{self, Mint, TokenAccount, TokenInterface, Transfer};
+use anchor_spl::token_2022::Token2022;
 
 declare_id!("F4ftWfZqAq99NK6yWTdA3B65xMwHVeD3MqVcqsvwbKzD");
 
@@ -134,7 +135,7 @@ pub struct InitializeProtocol<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
     pub system_program: Program<'info, System>,
-    pub token_program: Interface<'info, TokenInterface>,
+    pub token_program: Program<'info, Token2022>,
     pub rent: Sysvar<'info, Rent>,
 }
 
@@ -162,7 +163,7 @@ pub struct PlaceVote<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
     pub system_program: Program<'info, System>,
-    pub token_program: Interface<'info, TokenInterface>,
+    pub token_program: Program<'info, Token2022>,
 }
 
 #[derive(Accounts)]
@@ -179,7 +180,7 @@ pub struct ClaimWinnings<'info> {
     pub dev_token: InterfaceAccount<'info, TokenAccount>,
     #[account(mut)]
     pub user: Signer<'info>,
-    pub token_program: Interface<'info, TokenInterface>,
+    pub token_program: Program<'info, Token2022>,
 }
 
 #[derive(Accounts)]
@@ -198,7 +199,7 @@ pub struct SweepProfit<'info> {
     #[account(mut)]
     pub destination_token: InterfaceAccount<'info, TokenAccount>,
     pub authority: Signer<'info>,
-    pub token_program: Interface<'info, TokenInterface>,
+    pub token_program: Program<'info, Token2022>,
 }
 
 #[account]
