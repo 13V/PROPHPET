@@ -7,7 +7,8 @@ import {
     SystemProgram,
     SYSVAR_RENT_PUBKEY
 } from "@solana/web3.js";
-import { TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
+// import { TOKEN_2022_PROGRAM_ID } from "@solana/spl-token"; // Removed to avoid dependency issues
+const TOKEN_2022_PROGRAM_ID = new PublicKey("TokenzQdBnBLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb");
 import * as fs from "fs";
 import * as path from "path";
 
@@ -60,7 +61,8 @@ async function main() {
         console.log("⏳ Protocol not initialized. Sending transaction...");
 
         // Build Instruction
-        const tx = await program.methods
+        // Using 'any' cast to bypass "Type instantiation is excessively deep" errors
+        const tx = await (program.methods as any)
             .initializeProtocol()
             .accounts({
                 config: configPda,
